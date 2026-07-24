@@ -7,6 +7,8 @@
   <meta name="description" content="Térképes segítség a soproni szelektív hulladékgyűjtéshez: szigetek, hulladékudvarok, kommunális edények és hulladéknaptár." />
   <link rel="icon" href="assets/logo.png" />
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+  <link rel="stylesheet" href="vendor/leaflet.markercluster/MarkerCluster.css" />
+  <link rel="stylesheet" href="vendor/leaflet.markercluster/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -33,12 +35,13 @@
         <div class="filter-chip" data-cat="szigetek"><span class="dot" style="background:#00acc1"></span>Szelektív szigetek</div>
         <div class="filter-chip" data-cat="udvarok"><span class="dot" style="background:#c0392b"></span>Hulladékudvarok</div>
         <div class="filter-chip" data-cat="edenyek"><span class="dot" style="background:#5b6f73"></span>Kommunális edények</div>
+        <div class="filter-chip" data-cat="taeg"><span class="dot" style="background:#6b8e23"></span>TAEG erdei edények</div>
         <div class="spacer"></div>
         <button class="locate-btn" id="locate-btn">📍 Hol vagyok?</button>
       </div>
 
       <div id="map"></div>
-      <p class="map-note">A térképen látható pontok jelenleg <strong>illusztrációs, példa adatok</strong>, nem hivatalos STKH Kft. / Sopron Holding Zrt. adatbázisból származnak. Éles adatokkal a szolgáltatókkal való egyeztetés után lehet feltölteni az oldalt.</p>
+      <p class="map-note">A térképen látható pontok <strong>valós adatok</strong> az STKH Kft., a Sopron Holding Zrt. és a TAEG Zrt. adatszolgáltatása alapján (422 szelektív sziget, 17 hulladékudvar, 694 kommunális edény, 68 TAEG erdei gyűjtőedény). Nagyíts rá egy klaszterre a szétbontásához, vagy kattints egy pontra a részletekért.</p>
     </section>
 
     <section id="view-calendar" class="view">
@@ -68,7 +71,7 @@
           <span>Szelektálási tippek</span>
           <span>Soproni Egyetem</span>
         </div>
-        <p>Ez a weboldal az eredeti, AppSheetben épített mobilalkalmazás-prototípus webes, nyilvánosan megosztható bemutatója. Az itteni gyűjtőpont-adatok egyelőre <strong>példa adatok</strong> – a következő lépés a STKH Kft.-vel és a Sopron Holding Zrt.-vel való egyeztetés a valós adatok integrálásáról.</p>
+        <p>Ez a weboldal az eredeti, AppSheetben épített mobilalkalmazás-prototípus webes, nyilvánosan megosztható bemutatója. A térképen szereplő gyűjtőpontok <strong>valós adatok</strong> az STKH Kft., a Sopron Holding Zrt. és a TAEG Zrt. adatszolgáltatása alapján.</p>
         <div class="credit">
           Készítette: Janzsó Milán Gábor · Soproni Egyetem · 2025<br>
           Adatforrások és inspiráció: STKH Kft. (stkh.hu), Sopron Holding Zrt., MOHU REpont (repont.hu)
@@ -82,6 +85,7 @@
   </footer>
 
   <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/leaflet.markercluster/leaflet.markercluster.js"></script>
   <script src="js/data.js"></script>
   <script src="js/app.js"></script>
 </body>

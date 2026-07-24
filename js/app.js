@@ -1,5 +1,7 @@
-// SzelSzig App – egyszerű, statikus térképes demó weboldal
-// Térkép motor: Leaflet.js + OpenStreetMap csempék (nincs szükség API kulcsra)
+// SzelSzig App – egyszerű, statikus térképes weboldal
+// Térkép motor: Leaflet.js + Leaflet.markercluster + OpenStreetMap csempék
+// (nincs szükség API kulcsra). A pontok klaszterezve jelennek meg, hogy nagy
+// kicsinyítésnél is átlátható maradjon a térkép (ahogy a diplomamunka is leírja).
 
 const SOPRON_CENTER = [47.6817, 16.5845];
 
@@ -7,6 +9,7 @@ const CATEGORY_META = {
   szigetek: { label: "Szelektív szigetek", color: "#00acc1" },
   udvarok: { label: "Hulladékudvarok", color: "#c0392b" },
   edenyek: { label: "Kommunális edények", color: "#5b6f73" },
+  taeg: { label: "TAEG erdei edények", color: "#6b8e23" },
 };
 
 let map;
@@ -14,8 +17,25 @@ let userMarker;
 const layerGroups = {};
 const activeCategories = new Set(Object.keys(CATEGORY_META));
 
+function clusterIcon(color) {
+  return (cluster) => {
+    const count = cluster.getChildCount();
+    const size = count < 25 ? 34 : count < 100 ? 42 : 50;
+    return L.divIcon({
+      html: `<div style="
+        width:${size}px;height:${size}px;border-radius:50%;
+        background:${color}cc;border:2px solid #fff;color:#fff;
+        display:flex;align-items:center;justify-content:center;
+        font-weight:700;font-size:${count < 100 ? 13 : 12}px;
+        box-shadow:0 2px 6px rgba(0,0,0,.35);">${count}</div>`,
+      className: "",
+      iconSize: [size, size],
+    });
+  };
+}
+
 function initMap() {
-  map = L.map("map", { scrollWheelZoom: true }).setView(SOPRON_CENTER, 13);
+  map = L.map("map", { scrollWheelZoom: true }).setView(SOPRON_CENTER, 12);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
@@ -23,21 +43,31 @@ function initMap() {
   }).addTo(map);
 
   Object.keys(CATEGORY_META).forEach((key) => {
-    layerGroups[key] = L.layerGroup().addTo(map);
+    layerGroups[key] = L.markerClusterGroup({
+      iconCreateFunction: clusterIcon(CATEGORY_META[key].color),
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      maxClusterRadius: 50,
+    });
+    map.addLayer(layerGroups[key]);
   });
 
   addMarkers("szigetek", SZELSZIG_DATA.szigetek, (p) =>
-    `<b>${p.name}</b><br>Gyűjthető: ${p.fractions
-      .map((f) => `<span class="frac">${f}</span>`)
-      .join("")}${routeLink(p)}`
+    `<b>${p.name}</b><br>${p.area ? `<span style="color:#5b6f73">${p.area}</span><br>` : ""}Gyűjthető: ${
+      p.fractions.length ? p.fractions.map((f) => `<span class="frac">${f}</span>`).join("") : "<em>nincs adat</em>"
+    }${routeLink(p)}`
   );
 
   addMarkers("udvarok", SZELSZIG_DATA.udvarok, (p) =>
-    `<b>${p.name}</b><br>Nyitvatartás: ${p.open}${routeLink(p)}`
+    `<b>${p.name}</b><br>${p.county || ""}${routeLink(p)}`
   );
 
   addMarkers("edenyek", SZELSZIG_DATA.edenyek, (p) =>
-    `<b>${p.name}</b><br>Köztéri kommunális gyűjtőedény${routeLink(p)}`
+    `<b>${p.name}</b><br>Köztéri kommunális gyűjtőedény${p.type ? ` <span class="frac">${p.type}</span>` : ""}${routeLink(p)}`
+  );
+
+  addMarkers("taeg", SZELSZIG_DATA.taeg, (p) =>
+    `<b>${p.name}</b><br>TAEG erdészeti/turisztikai kommunális gyűjtőedény${routeLink(p)}`
   );
 }
 
@@ -48,7 +78,7 @@ function routeLink(p) {
 
 function addMarkers(category, points, popupFn) {
   const color = CATEGORY_META[category].color;
-  points.forEach((p) => {
+  const markers = points.map((p) => {
     const marker = L.circleMarker([p.lat, p.lng], {
       radius: 8,
       color: "#fff",
@@ -56,8 +86,9 @@ function addMarkers(category, points, popupFn) {
       fillColor: color,
       fillOpacity: 0.9,
     }).bindPopup(popupFn(p));
-    marker.addTo(layerGroups[category]);
+    return marker;
   });
+  layerGroups[category].addLayers(markers);
 }
 
 function toggleCategory(category) {
