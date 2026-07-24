@@ -57,15 +57,9 @@ function initMap() {
     map.addLayer(layerGroups[key]);
   });
 
-  addMarkers("szigetek", SZELSZIG_DATA.szigetek, (p) =>
-    `<b>${p.name}</b><br>${p.area ? `<span style="color:#5b6f73">${p.area}</span><br>` : ""}Gyűjthető: ${
-      p.fractions.length ? p.fractions.map((f) => `<span class="frac">${f}</span>`).join("") : "<em>nincs adat</em>"
-    }${routeLink(p)}`
-  );
+  addMarkers("szigetek", SZELSZIG_DATA.szigetek, szigetPopup);
 
-  addMarkers("udvarok", SZELSZIG_DATA.udvarok, (p) =>
-    `<b>${p.name}</b><br>${p.county || ""}${routeLink(p)}`
-  );
+  addMarkers("udvarok", SZELSZIG_DATA.udvarok, udvarPopup);
 
   addMarkers("edenyek", SZELSZIG_DATA.edenyek, (p) =>
     `<b>${p.name}</b><br>Köztéri kommunális gyűjtőedény${p.type ? ` <span class="frac">${p.type}</span>` : ""}${routeLink(p)}`
@@ -74,6 +68,29 @@ function initMap() {
   addMarkers("taeg", SZELSZIG_DATA.taeg, (p) =>
     `<b>${p.name}</b><br>TAEG erdészeti/turisztikai kommunális gyűjtőedény${routeLink(p)}`
   );
+}
+
+function szigetPopup(p) {
+  const fracPills = p.fractions.length
+    ? p.fractions.map((f) => `<span class="frac">${f}</span>`).join("")
+    : "<em>nincs adat</em>";
+  const acceptedItems = p.fractions
+    .filter((f) => FRACTION_ACCEPTED[f])
+    .map((f) => `<li><b>${f}:</b> ${FRACTION_ACCEPTED[f]}</li>`)
+    .join("");
+  const details = acceptedItems
+    ? `<details class="popup-details"><summary>Mit dobhatok bele?</summary><ul class="accepted-list">${acceptedItems}</ul></details>`
+    : "";
+  return `<b>${p.name}</b><br>${p.area ? `<span style="color:#5b6f73">${p.area}</span><br>` : ""}Gyűjthető: ${fracPills}${details}${routeLink(p)}`;
+}
+
+function udvarPopup(p) {
+  return `<b>${p.name}</b><br>${p.county || ""}
+    <details class="popup-details"><summary>Nyitvatartás és feltételek</summary>
+      <p>${HULLADEKUDVAR_INFO.hours}</p>
+      <p><b>Elfogadott hulladék:</b> ${HULLADEKUDVAR_INFO.accepted}</p>
+      <p><b>Feltétel:</b> ${HULLADEKUDVAR_INFO.condition}</p>
+    </details>${routeLink(p)}`;
 }
 
 function routeLink(p) {
@@ -90,7 +107,7 @@ function addMarkers(category, points, popupFn) {
       weight: 2,
       fillColor: color,
       fillOpacity: 0.9,
-    }).bindPopup(popupFn(p));
+    }).bindPopup(popupFn(p), { maxWidth: 300 });
     return marker;
   });
   layerGroups[category].addLayers(markers);

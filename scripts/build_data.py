@@ -155,6 +155,25 @@ for _, row in df4.iterrows():
 print(f"TAEG edények: {len(taeg)}")
 
 # ---------------------------------------------------------------------------
+# 5) Szelektiv szigetek gyujtesi szabalyai -- mit fogadnak el frakciankent
+# (a szigetek GPS-adatai csak azt mondjak meg, HOGY gyujtenek-e egy adott
+# frakciot; ez a tabla adja hozza, hogy MIT lehet abba beledobni)
+# ---------------------------------------------------------------------------
+f_szab = find_one("szab_lyzata")
+df5 = pd.read_excel(f_szab, sheet_name=0, header=0)
+df5.columns = ["frakcio_label", "leiras"]
+df5 = df5.dropna(subset=["leiras"])
+
+FRACTION_KEY = {"Papírt": "papír", "Műanyagot": "műanyag", "Üveget": "üveg", "Fémet": "fém"}
+fraction_accepted = {}
+for _, row in df5.iterrows():
+    key = FRACTION_KEY.get(str(row["frakcio_label"]).strip())
+    if key:
+        fraction_accepted[key] = str(row["leiras"]).strip()
+
+print(f"frakció-szabályok: {list(fraction_accepted.keys())}")
+
+# ---------------------------------------------------------------------------
 # Write data.js
 # ---------------------------------------------------------------------------
 out = []
@@ -176,9 +195,21 @@ out.append(f"  edenyek: {json.dumps(edenyek, ensure_ascii=False)},")
 out.append(f"  taeg: {json.dumps(taeg, ensure_ascii=False)},")
 out.append("};")
 out.append("")
+out.append("// Mit lehet az egyes frakciókba dobni (STKH Kft. szelektív szigetek szabályzata)")
+out.append(f"const FRACTION_ACCEPTED = {json.dumps(fraction_accepted, ensure_ascii=False)};")
+out.append("")
 
 # Keep the demo calendar & tips content (not covered by the Excel files)
 extra = '''
+// Hulladékudvarokra vonatkozó általános STKH Kft. szabályok (nem táblázatos
+// adat, a diplomamunka szövege alapján -- telephelyenként eltérhet, az
+// aktuális nyitvatartást célszerű az STKH Kft.-nél ellenőrizni).
+const HULLADEKUDVAR_INFO = {
+  hours: "A legtöbb telephely heti három napon, jellemzően kedden, csütörtökön és szombaton tart nyitva, 8:00–15:00 között. A hulladékot legkésőbb 14:45-ig kell leadni.",
+  accepted: "Lakossági eredetű, előre szelektált hulladék adható le: pl. szétszerelt bútor, zöldhulladék, kisebb építési törmelék, valamint veszélyes hulladékok (fáradt motor-/kenőolaj, elemek, akkumulátorok, elektronikai hulladék, festékmaradék).",
+  condition: "Csak az STKH Kft. szolgáltatási területén bejelentett lakcímmel rendelkező, hulladékszállítási díjhátralék nélküli lakosok vehetik igénybe.",
+};
+
 // Demó hulladéknaptár – házhoz menő zsákos gyűjtés (STKH Kft. rendszere alapján, példa)
 const SZELSZIG_CALENDAR = [
   { fraction: "Papír", day: "Minden hónap 1. és 3. hétfője", color: "#2f6fed" },

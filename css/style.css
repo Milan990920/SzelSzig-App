@@ -280,6 +280,29 @@ button.locate-btn:hover { background: #256e46; }
   font-size: 0.85rem;
 }
 
+.leaflet-popup-content .popup-details {
+  margin-top: 6px;
+  font-size: 0.8rem;
+}
+
+.leaflet-popup-content .popup-details summary {
+  cursor: pointer;
+  color: var(--teal-dark);
+  font-weight: 600;
+}
+
+.leaflet-popup-content .popup-details p,
+.leaflet-popup-content .popup-details ul.accepted-list {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.leaflet-popup-content .popup-details ul.accepted-list li {
+  margin-bottom: 4px;
+}
+
 /* ---------- Cards grid ---------- */
 .grid {
   display: grid;
