@@ -22,6 +22,7 @@
       <button class="active" data-target="view-map">Térkép</button>
       <button data-target="view-calendar">Hulladéknaptár</button>
       <button data-target="view-tips">Tippek</button>
+      <button data-target="view-report">Hibabejelentés</button>
       <button data-target="view-about">Rólunk</button>
     </nav>
   </header>
@@ -30,6 +31,12 @@
     <section id="view-map" class="view active">
       <h1 class="page-title">Gyűjtőpontok térképe</h1>
       <p class="lead">Keresd meg a hozzád legközelebbi szelektív szigetet, hulladékudvart vagy köztéri kommunális edényt, és indíts hozzá útvonaltervet.</p>
+
+      <form class="address-search" id="address-form">
+        <input type="text" id="address-input" placeholder="Cím keresése (pl. Sopron, Várkerület 10)" autocomplete="off" />
+        <button type="submit">🔎 Keresés</button>
+      </form>
+      <div id="address-results"></div>
 
       <div class="map-toolbar">
         <div class="filter-chip" data-cat="szigetek"><span class="dot" style="background:#00acc1"></span>Szelektív szigetek</div>
@@ -59,6 +66,43 @@
       <div class="grid" id="tips-grid"></div>
     </section>
 
+    <section id="view-report" class="view">
+      <h1 class="page-title">Hibabejelentés</h1>
+      <p class="lead">Sérült gyűjtőedényt, tele konténert vagy illegális hulladéklerakást láttál? Jelentsd be fotóval és helyszínnel — ez segít a szolgáltatónak gyorsabban reagálni, telefonos ügyfélszolgálat nélkül.</p>
+
+      <form class="report-form" id="report-form">
+        <label>
+          Típus
+          <select id="report-type">
+            <option value="Sérült gyűjtőedény">Sérült gyűjtőedény</option>
+            <option value="Tele / túltöltött edény">Tele / túltöltött edény</option>
+            <option value="Illegális hulladéklerakás">Illegális hulladéklerakás</option>
+            <option value="Egyéb probléma">Egyéb probléma</option>
+          </select>
+        </label>
+
+        <label>
+          Leírás
+          <textarea id="report-desc" rows="4" placeholder="Írd le röviden, mit tapasztaltál..."></textarea>
+        </label>
+
+        <label>
+          Fénykép
+          <input type="file" id="report-photo" accept="image/*" capture="environment" />
+        </label>
+        <img id="report-photo-preview" class="photo-preview" hidden alt="Csatolt fénykép előnézete" />
+
+        <div class="report-location">
+          <button type="button" class="locate-btn" id="report-locate-btn">📍 Helyszín csatolása</button>
+          <span id="report-location-text" class="report-location-text">Nincs helyszín csatolva</span>
+        </div>
+
+        <button type="submit" class="submit-btn">Bejelentés elküldése</button>
+      </form>
+
+      <p class="map-note">Ez a demó verzió a bejelentést egy előkészített e-mailben nyitja meg (nincs még saját szerver mögötte) — a <strong>fényképet ilyenkor kézzel kell csatolni</strong> a kiküldés előtt. Éles bevezetésnél ez egyenesen a szolgáltató ügyfélszolgálati rendszerébe futna be, fotóval és GPS-pozícióval együtt, kézi lépés nélkül.</p>
+    </section>
+
     <section id="view-about" class="view">
       <h1 class="page-title">Rólunk</h1>
       <div class="about-box">
@@ -66,9 +110,11 @@
         <p>A cél egy olyan hiánypótló felület, amely a MOHU REpont alkalmazása <em>mellett</em> nyújt segítséget: egy térképen mutatja meg a szelektív szigeteket, a hulladékudvarokat és a köztéri kommunális gyűjtőedényeket is – ez utóbbi országosan is egyedülálló funkció.</p>
         <div class="pillbar">
           <span>Térképes keresés</span>
+          <span>Cím szerinti keresés</span>
           <span>Útvonaltervezés</span>
           <span>Hulladéknaptár</span>
           <span>Szelektálási tippek</span>
+          <span>Hibabejelentés</span>
           <span>Soproni Egyetem</span>
         </div>
         <p>Ez a weboldal az eredeti, AppSheetben épített mobilalkalmazás-prototípus webes, nyilvánosan megosztható bemutatója. A térképen szereplő gyűjtőpontok <strong>valós adatok</strong> az STKH Kft., a Sopron Holding Zrt. és a TAEG Zrt. adatszolgáltatása alapján.</p>

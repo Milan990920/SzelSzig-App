@@ -117,6 +117,80 @@ p.lead {
   max-width: 70ch;
 }
 
+/* ---------- Address search ---------- */
+.address-search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.address-search input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.address-search input:focus {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+
+.address-search button {
+  border: none;
+  background: var(--teal);
+  color: #fff;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.address-search button:hover { background: var(--teal-dark); }
+
+#address-results {
+  margin-bottom: 10px;
+}
+
+#address-results .nearest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#address-results .nearest-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow);
+}
+
+#address-results .nearest-item .dist {
+  color: var(--teal-dark);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+#address-results .search-error,
+#address-results .search-status {
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 6px 2px;
+}
+
 /* ---------- Map view ---------- */
 .map-toolbar {
   display: flex;
@@ -311,6 +385,80 @@ table.calendar tr:last-child td { border-bottom: none; }
   padding: 5px 11px;
   border-radius: 999px;
 }
+
+/* ---------- Report form ---------- */
+.report-form {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 520px;
+}
+
+.report-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.report-form select,
+.report-form textarea,
+.report-form input[type="file"] {
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-weight: 400;
+  resize: vertical;
+}
+
+.report-form select:focus,
+.report-form textarea:focus {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+
+.photo-preview {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+
+.report-location {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.report-location-text {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+button.submit-btn {
+  border: none;
+  background: var(--red);
+  color: #fff;
+  padding: 11px 18px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+button.submit-btn:hover { background: #a53225; }
 
 footer.sitefoot {
   text-align: center;

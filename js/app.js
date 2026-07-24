@@ -5,6 +5,11 @@
 
 const SOPRON_CENTER = [47.6817, 16.5845];
 
+// Ide érkeznének a hibabejelentések. Demó/statikus oldalon nincs szerver, ezért
+// mailto-val nyitjuk meg a bejelentést -- éles bevezetésnél ezt egy valódi
+// ügyfélszolgálati rendszerhez kötött backend váltaná ki.
+const REPORT_EMAIL = "ugyfelszolgalat@stkh.hu";
+
 const CATEGORY_META = {
   szigetek: { label: "Szelektív szigetek", color: "#00acc1" },
   udvarok: { label: "Hulladékudvarok", color: "#c0392b" },
@@ -130,6 +135,162 @@ function locateMe() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Cím szerinti keresés + legközelebbi gyűjtőpontok
+// ---------------------------------------------------------------------------
+
+let searchMarker;
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function findNearest(lat, lng, perCategory = 1) {
+  const results = [];
+  Object.keys(CATEGORY_META).forEach((cat) => {
+    const points = SZELSZIG_DATA[cat] || [];
+    const withDist = points
+      .map((p) => ({ ...p, category: cat, dist: haversineKm(lat, lng, p.lat, p.lng) }))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, perCategory);
+    results.push(...withDist);
+  });
+  return results.sort((a, b) => a.dist - b.dist);
+}
+
+function renderNearestList(lat, lng) {
+  const container = document.getElementById("address-results");
+  const nearest = findNearest(lat, lng, 1);
+  container.innerHTML = `<ul class="nearest-list">${nearest
+    .map((p) => {
+      const meta = CATEGORY_META[p.category];
+      const distText = p.dist < 1 ? `${Math.round(p.dist * 1000)} m` : `${p.dist.toFixed(1)} km`;
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+      return `<li class="nearest-item">
+        <span><span class="dot" style="background:${meta.color};display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;"></span>${meta.label}: ${p.name}</span>
+        <span class="dist"><a href="${url}" target="_blank" rel="noopener">${distText} &rarr;</a></span>
+      </li>`;
+    })
+    .join("")}</ul>`;
+}
+
+async function searchAddress(query) {
+  const container = document.getElementById("address-results");
+  container.innerHTML = `<p class="search-status">Keresés…</p>`;
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=hu&q=${encodeURIComponent(query)}`;
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    const data = await res.json();
+    if (!data.length) {
+      container.innerHTML = `<p class="search-error">Nem található ilyen cím. Próbáld pontosabban megadni (pl. település is szerepeljen benne).</p>`;
+      return;
+    }
+    const { lat, lon } = data[0];
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lon);
+
+    if (searchMarker) map.removeLayer(searchMarker);
+    searchMarker = L.marker([latNum, lngNum], {
+      icon: L.divIcon({
+        className: "",
+        html: '<div style="background:#e91e63;width:18px;height:18px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>',
+        iconSize: [18, 18],
+      }),
+    })
+      .addTo(map)
+      .bindPopup(`Keresett cím: ${data[0].display_name}`)
+      .openPopup();
+    map.setView([latNum, lngNum], 15);
+
+    renderNearestList(latNum, lngNum);
+  } catch (err) {
+    container.innerHTML = `<p class="search-error">A keresés nem sikerült (hálózati hiba). Próbáld újra.</p>`;
+  }
+}
+
+function setupAddressSearch() {
+  const form = document.getElementById("address-form");
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const query = document.getElementById("address-input").value.trim();
+    if (!query) return;
+    searchAddress(query.toLowerCase().includes("sopron") ? query : `${query}, Sopron`);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Hibabejelentés
+// ---------------------------------------------------------------------------
+
+let reportLocation = null;
+
+function setupReportForm() {
+  const form = document.getElementById("report-form");
+  const photoInput = document.getElementById("report-photo");
+  const preview = document.getElementById("report-photo-preview");
+  const locateBtn = document.getElementById("report-locate-btn");
+  const locationText = document.getElementById("report-location-text");
+
+  photoInput.addEventListener("change", () => {
+    const file = photoInput.files[0];
+    if (!file) {
+      preview.hidden = true;
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      preview.src = e.target.result;
+      preview.hidden = false;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  locateBtn.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      alert("A böngésződ nem támogatja a helymeghatározást.");
+      return;
+    }
+    locationText.textContent = "Pozíció lekérése…";
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        reportLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        locationText.textContent = `Csatolva: ${reportLocation.lat.toFixed(5)}, ${reportLocation.lng.toFixed(5)}`;
+      },
+      () => {
+        locationText.textContent = "Nem sikerült lekérni a pozíciót.";
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  });
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const type = document.getElementById("report-type").value;
+    const desc = document.getElementById("report-desc").value.trim();
+    const hasPhoto = photoInput.files.length > 0;
+
+    const lines = [
+      `Típus: ${type}`,
+      `Leírás: ${desc || "(nincs megadva)"}`,
+      reportLocation
+        ? `Helyszín: ${reportLocation.lat.toFixed(5)}, ${reportLocation.lng.toFixed(5)} — https://www.google.com/maps?q=${reportLocation.lat},${reportLocation.lng}`
+        : "Helyszín: nincs csatolva",
+      hasPhoto ? "\n(Ne felejtsd el csatolni a kiválasztott fényképet ehhez az e-mailhez!)" : "",
+      "\n— Küldve a SzelSzig App hibabejelentő űrlapjáról",
+    ];
+
+    const subject = encodeURIComponent(`SzelSzig App hibabejelentés – ${type}`);
+    const body = encodeURIComponent(lines.join("\n"));
+    window.location.href = `mailto:${REPORT_EMAIL}?subject=${subject}&body=${body}`;
+  });
+}
+
 function renderCalendar() {
   const tbody = document.getElementById("calendar-body");
   tbody.innerHTML = SZELSZIG_CALENDAR.map(
@@ -180,4 +341,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderTips();
   setupTabs();
   setupFilters();
+  setupAddressSearch();
+  setupReportForm();
 });
