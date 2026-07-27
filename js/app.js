@@ -308,6 +308,104 @@ function setupReportForm() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Egyetem (campus) – épület/szint alaprajzok
+// ---------------------------------------------------------------------------
+
+let campusActiveBuilding = CAMPUS_BUILDINGS[0].id;
+let campusActiveFloor = CAMPUS_BUILDINGS[0].floors[0].id;
+
+function renderCampusBuildings() {
+  const wrap = document.getElementById("campus-buildings");
+  wrap.innerHTML = CAMPUS_BUILDINGS.map(
+    (b) => `<button class="campus-chip${b.id === campusActiveBuilding ? " active" : ""}" data-building="${b.id}">${b.name}</button>`
+  ).join("");
+  wrap.querySelectorAll(".campus-chip").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      campusActiveBuilding = btn.dataset.building;
+      const building = CAMPUS_BUILDINGS.find((b) => b.id === campusActiveBuilding);
+      campusActiveFloor = building.floors[0].id;
+      renderCampusBuildings();
+      renderCampusFloors();
+    });
+  });
+}
+
+function renderCampusFloors() {
+  const building = CAMPUS_BUILDINGS.find((b) => b.id === campusActiveBuilding);
+  const wrap = document.getElementById("campus-floors");
+  wrap.innerHTML = building.floors
+    .map((f) => `<button class="campus-floor-tab${f.id === campusActiveFloor ? " active" : ""}" data-floor="${f.id}">${f.label}</button>`)
+    .join("");
+  wrap.querySelectorAll(".campus-floor-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      campusActiveFloor = btn.dataset.floor;
+      renderCampusFloors();
+      renderCampusPlan();
+    });
+  });
+  renderCampusPlan();
+}
+
+function renderCampusPlan() {
+  const building = CAMPUS_BUILDINGS.find((b) => b.id === campusActiveBuilding);
+  const floor = building.floors.find((f) => f.id === campusActiveFloor);
+  const img = document.getElementById("campus-plan-img");
+  img.src = floor.img;
+  img.alt = `${building.name} – ${floor.label} alaprajz`;
+}
+
+function renderCampusLegend() {
+  const wrap = document.getElementById("campus-legend");
+  wrap.innerHTML = CAMPUS_LEGEND.map(
+    (l) => `<div class="legend-item"><span class="legend-icon">${l.icon}</span><div><b>${l.label}</b><p>${l.desc}</p></div></div>`
+  ).join("");
+}
+
+function renderCampusSorting() {
+  const wrap = document.getElementById("campus-sorting");
+  wrap.innerHTML = CAMPUS_SORTING.map(
+    (s) => `
+    <div class="sorting-card" style="border-top-color:${s.color}">
+      <h3>${s.category}${s.tagline ? ` <span class="sorting-tagline">${s.tagline}</span>` : ""}</h3>
+      <div class="sorting-col">
+        <p class="sorting-heading sorting-yes">✔ Tedd bele!</p>
+        <ul>${s.accept.map((i) => `<li>${i}</li>`).join("")}</ul>
+      </div>
+      <div class="sorting-col">
+        <p class="sorting-heading sorting-no">✘ Ne tedd bele!</p>
+        <ul>${s.reject.map((i) => `<li>${i}</li>`).join("")}</ul>
+      </div>
+    </div>`
+  ).join("");
+}
+
+function setupCampusLightbox() {
+  const planImg = document.getElementById("campus-plan-img");
+  const lightbox = document.getElementById("campus-lightbox");
+  const lightboxImg = document.getElementById("campus-lightbox-img");
+  const closeBtn = document.getElementById("campus-lightbox-close");
+
+  planImg.addEventListener("click", () => {
+    lightboxImg.src = planImg.src;
+    lightboxImg.alt = planImg.alt;
+    lightbox.classList.add("open");
+  });
+  const close = () => lightbox.classList.remove("open");
+  closeBtn.addEventListener("click", close);
+  lightbox.addEventListener("click", (e) => {
+    if (e.target === lightbox) close();
+  });
+}
+
+function setupCampus() {
+  renderCampusBuildings();
+  renderCampusFloors();
+  renderCampusLegend();
+  renderCampusSorting();
+  setupCampusLightbox();
+}
+
 function renderCalendar() {
   const tbody = document.getElementById("calendar-body");
   tbody.innerHTML = SZELSZIG_CALENDAR.map(
@@ -360,4 +458,5 @@ document.addEventListener("DOMContentLoaded", () => {
   setupFilters();
   setupAddressSearch();
   setupReportForm();
+  setupCampus();
 });

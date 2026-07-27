@@ -23,6 +23,7 @@
       <button data-target="view-calendar">Hulladéknaptár</button>
       <button data-target="view-tips">Tippek</button>
       <button data-target="view-report">Hibabejelentés</button>
+      <button data-target="view-campus">Egyetem</button>
       <button data-target="view-about">Rólunk</button>
     </nav>
   </header>
@@ -103,6 +104,37 @@
       <p class="map-note">Ez a demó verzió a bejelentést egy előkészített e-mailben nyitja meg (nincs még saját szerver mögötte) — a <strong>fényképet ilyenkor kézzel kell csatolni</strong> a kiküldés előtt. Éles bevezetésnél ez egyenesen a szolgáltató ügyfélszolgálati rendszerébe futna be, fotóval és GPS-pozícióval együtt, kézi lépés nélkül.</p>
     </section>
 
+    <section id="view-campus" class="view campus-view">
+      <h1 class="page-title">Soproni Egyetem – hulladékgyűjtés a campuson</h1>
+      <p class="lead">A Soproni Egyetem saját, épületenkénti alaprajzai alapján: válaszd ki az épületet és a szintet, hogy lásd, hol találod a gyűjtőedényeket.</p>
+
+      <div class="campus-buildings" id="campus-buildings"></div>
+      <div class="campus-floors" id="campus-floors"></div>
+
+      <div class="campus-plan-wrap">
+        <img id="campus-plan-img" class="campus-plan-img" src="" alt="Alaprajz" />
+        <span class="campus-zoom-hint">🔍 Kattints a nagyításhoz</span>
+      </div>
+
+      <h2 class="campus-subtitle">Jelmagyarázat</h2>
+      <div class="campus-legend" id="campus-legend"></div>
+
+      <h2 class="campus-subtitle">Hova dobjam? – a Soproni Egyetem 3R programja</h2>
+      <p class="lead">A Soproni Egyetem 3R (Reduce, Reuse, Recycle) hulladékkezelési programja alapján, a felhasználó saját tervezésű tájékoztatója szerint.</p>
+      <div class="sorting-grid" id="campus-sorting"></div>
+
+      <p class="map-note">
+        További információ a Soproni Egyetem szelektív hulladékgyűjtési programjáról:
+        <a href="https://greenuniversity.uni-sopron.hu/szelektiv-hulladekgyujtes" target="_blank" rel="noopener">greenuniversity.uni-sopron.hu/szelektiv-hulladekgyujtes</a>
+        &middot; <a href="https://www.uni-sopron.hu/kezdolap" target="_blank" rel="noopener">uni-sopron.hu</a>
+      </p>
+    </section>
+
+    <div class="lightbox" id="campus-lightbox">
+      <span class="lightbox-close" id="campus-lightbox-close">&times;</span>
+      <img id="campus-lightbox-img" src="" alt="Alaprajz nagyítva" />
+    </div>
+
     <section id="view-about" class="view">
       <h1 class="page-title">Rólunk</h1>
       <div class="about-box">
@@ -115,6 +147,7 @@
           <span>Hulladéknaptár</span>
           <span>Szelektálási tippek</span>
           <span>Hibabejelentés</span>
+          <span>Campus alaprajzok</span>
           <span>Soproni Egyetem</span>
         </div>
         <p>Ez a weboldal az eredeti, AppSheetben épített mobilalkalmazás-prototípus webes, nyilvánosan megosztható bemutatója. A térképen szereplő gyűjtőpontok <strong>valós adatok</strong> az STKH Kft., a Sopron Holding Zrt. és a TAEG Zrt. adatszolgáltatása alapján.</p>
@@ -133,6 +166,7 @@
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="vendor/leaflet.markercluster/leaflet.markercluster.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/campus.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
