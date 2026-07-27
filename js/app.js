@@ -366,18 +366,95 @@ function renderCampusSorting() {
   const wrap = document.getElementById("campus-sorting");
   wrap.innerHTML = CAMPUS_SORTING.map(
     (s) => `
-    <div class="sorting-card" style="border-top-color:${s.color}">
+    <div class="sorting-card" data-category="${s.category}" style="border-top-color:${s.color}">
       <h3>${s.category}${s.tagline ? ` <span class="sorting-tagline">${s.tagline}</span>` : ""}</h3>
       <div class="sorting-col">
         <p class="sorting-heading sorting-yes">✔ Tedd bele!</p>
-        <ul>${s.accept.map((i) => `<li>${i}</li>`).join("")}</ul>
+        <ul>${s.accept.map((i) => `<li>${i.icon} ${i.text}</li>`).join("")}</ul>
       </div>
       <div class="sorting-col">
         <p class="sorting-heading sorting-no">✘ Ne tedd bele!</p>
-        <ul>${s.reject.map((i) => `<li>${i}</li>`).join("")}</ul>
+        <ul>${s.reject.map((i) => `<li>${i.icon} ${i.text}</li>`).join("")}</ul>
       </div>
     </div>`
   ).join("");
+}
+
+// ---------------------------------------------------------------------------
+// "Mi hova dobjam?" ikonos kereső
+// ---------------------------------------------------------------------------
+
+function buildSortingIndex() {
+  const index = new Map(); // text -> { icon, matches: [{category, color, tagline, status}] }
+  CAMPUS_SORTING.forEach((s) => {
+    ["accept", "reject"].forEach((status) => {
+      s[status].forEach((item) => {
+        if (!index.has(item.text)) {
+          index.set(item.text, { icon: item.icon, matches: [] });
+        }
+        index.get(item.text).matches.push({ category: s.category, color: s.color, tagline: s.tagline, status });
+      });
+    });
+  });
+  return index;
+}
+
+const SORTING_INDEX = buildSortingIndex();
+
+function renderSortingIconGrid(filter = "") {
+  const wrap = document.getElementById("sorting-icon-grid");
+  const norm = filter.trim().toLowerCase();
+  const entries = [...SORTING_INDEX.entries()].filter(([text]) => !norm || text.toLowerCase().includes(norm));
+
+  if (!entries.length) {
+    wrap.innerHTML = `<p class="search-status">Nincs találat — nézd át a lenti teljes listákat, vagy próbálj más kulcsszót.</p>`;
+    return;
+  }
+
+  wrap.innerHTML = entries
+    .map(([text, data]) => `<button type="button" class="sorting-chip" data-item="${text.replace(/"/g, "&quot;")}"><span class="sorting-chip-icon">${data.icon}</span>${text}</button>`)
+    .join("");
+
+  wrap.querySelectorAll(".sorting-chip").forEach((btn) => {
+    btn.addEventListener("click", () => selectSortingItem(btn.dataset.item));
+  });
+}
+
+function selectSortingItem(text) {
+  const data = SORTING_INDEX.get(text);
+  if (!data) return;
+
+  const resultBox = document.getElementById("sorting-result");
+  resultBox.hidden = false;
+  resultBox.innerHTML = `
+    <span class="sorting-result-icon">${data.icon}</span>
+    <div>
+      <div class="sorting-result-title">${text}</div>
+      <div class="sorting-result-pills">
+        ${data.matches
+          .map(
+            (m) =>
+              `<span class="sorting-pill ${m.status === "accept" ? "pill-yes" : "pill-no"}" style="--pill-color:${m.color}">
+                ${m.status === "accept" ? "✔" : "✘"} ${m.category}${m.status === "reject" ? " – ide NE" : ""}
+              </span>`
+          )
+          .join("")}
+      </div>
+    </div>`;
+
+  document.querySelectorAll(".sorting-card").forEach((card) => {
+    const match = data.matches.some((m) => m.category === card.dataset.category);
+    card.classList.toggle("sorting-card-highlight", match);
+    card.classList.toggle("sorting-card-dim", !match);
+  });
+
+  resultBox.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function setupSortingSearch() {
+  const input = document.getElementById("sorting-search-input");
+  renderSortingIconGrid();
+  input.addEventListener("input", () => renderSortingIconGrid(input.value));
 }
 
 function setupCampusLightbox() {
@@ -404,6 +481,7 @@ function setupCampus() {
   renderCampusLegend();
   renderCampusSorting();
   setupCampusLightbox();
+  setupSortingSearch();
 }
 
 function renderCalendar() {
