@@ -110,6 +110,50 @@ for _, row in df2.iterrows():
 print(f"hulladékudvarok: {len(udvarok)}")
 
 # ---------------------------------------------------------------------------
+# 2b) Hulladekudvarok reszletes adatai (nyitvatartas, elfogadott hulladek stb.)
+# -- matched to the udvarok list above by nearest GPS coordinate, since the
+# two source files don't share a common ID.
+# ---------------------------------------------------------------------------
+try:
+    f_udvar_reszletes = find_one("Hulladekudvarok_reszletes")
+except FileNotFoundError:
+    f_udvar_reszletes = None
+
+if f_udvar_reszletes:
+    df2b = pd.read_excel(f_udvar_reszletes, sheet_name="Hulladékudvarok", header=0)
+    df2b.columns = [
+        "varmegye", "nev", "cim", "lat", "lng", "uzemelteto", "nyitvatartas",
+        "elfogadott", "megjegyzes", "weboldal", "ugyfelszolgalat",
+    ]
+
+    def nearest_udvar_index(lat, lng):
+        best_i, best_d = None, None
+        for i, u in enumerate(udvarok):
+            d = (u["lat"] - lat) ** 2 + (u["lng"] - lng) ** 2
+            if best_d is None or d < best_d:
+                best_i, best_d = i, d
+        return best_i, best_d
+
+    matched = 0
+    for _, row in df2b.iterrows():
+        if pd.isna(row["lat"]) or pd.isna(row["lng"]):
+            continue
+        idx, dist2 = nearest_udvar_index(float(row["lat"]), float(row["lng"]))
+        if idx is None or dist2 > 0.01 ** 2:  # ~1km sanity cap, avoid mismatches
+            continue
+        udvarok[idx].update({
+            "address": str(row["cim"]).strip() if pd.notna(row["cim"]) else None,
+            "operator": str(row["uzemelteto"]).strip() if pd.notna(row["uzemelteto"]) else None,
+            "hours": str(row["nyitvatartas"]).strip() if pd.notna(row["nyitvatartas"]) else None,
+            "accepted": str(row["elfogadott"]).strip() if pd.notna(row["elfogadott"]) else None,
+            "note": str(row["megjegyzes"]).strip() if pd.notna(row["megjegyzes"]) else None,
+            "website": str(row["weboldal"]).strip() if pd.notna(row["weboldal"]) else None,
+            "phone": str(row["ugyfelszolgalat"]).strip() if pd.notna(row["ugyfelszolgalat"]) else None,
+        })
+        matched += 1
+    print(f"hulladékudvar részletek: {matched} párosítva")
+
+# ---------------------------------------------------------------------------
 # 3) Kommunalis edenyek -- "App_Kommunális edények" (the superset, 694 rows)
 # ---------------------------------------------------------------------------
 f_komm = find_one("App_Kommun")

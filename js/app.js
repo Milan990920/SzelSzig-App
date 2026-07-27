@@ -62,7 +62,7 @@ function initMap() {
   addMarkers("udvarok", SZELSZIG_DATA.udvarok, udvarPopup);
 
   addMarkers("edenyek", SZELSZIG_DATA.edenyek, (p) =>
-    `<b>${p.name}</b><br>Köztéri kommunális gyűjtőedény${p.type ? ` <span class="frac">${p.type}</span>` : ""}${routeLink(p)}`
+    `<b>${p.name}</b><br>Köztéri kommunális gyűjtőedény${routeLink(p)}`
   );
 
   addMarkers("taeg", SZELSZIG_DATA.taeg, (p) =>
@@ -85,11 +85,21 @@ function szigetPopup(p) {
 }
 
 function udvarPopup(p) {
-  return `<b>${p.name}</b><br>${p.county || ""}
+  const hours = p.hours || HULLADEKUDVAR_INFO.hours;
+  const accepted = p.accepted || HULLADEKUDVAR_INFO.accepted;
+  const extra = [
+    p.operator ? `<p><b>Üzemeltető:</b> ${p.operator}</p>` : "",
+    p.note ? `<p><b>Megjegyzés:</b> ${p.note}</p>` : "",
+    !p.hours && !p.accepted ? `<p><b>Feltétel:</b> ${HULLADEKUDVAR_INFO.condition}</p>` : "",
+    p.website ? `<p><a href="${p.website}" target="_blank" rel="noopener">Részletek a szolgáltató oldalán &rarr;</a></p>` : "",
+    p.phone ? `<p><b>Ügyfélszolgálat:</b> ${p.phone}</p>` : "",
+  ].join("");
+
+  return `<b>${p.name}</b><br>${p.address || p.county || ""}
     <details class="popup-details"><summary>Nyitvatartás és feltételek</summary>
-      <p>${HULLADEKUDVAR_INFO.hours}</p>
-      <p><b>Elfogadott hulladék:</b> ${HULLADEKUDVAR_INFO.accepted}</p>
-      <p><b>Feltétel:</b> ${HULLADEKUDVAR_INFO.condition}</p>
+      <p>${hours}</p>
+      <p><b>Elfogadott hulladék:</b> ${accepted}</p>
+      ${extra}
     </details>${routeLink(p)}`;
 }
 
