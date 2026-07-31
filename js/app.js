@@ -453,9 +453,15 @@ function selectSortingItem(text) {
     </div>`;
 
   document.querySelectorAll(".sorting-card").forEach((card) => {
-    const match = data.matches.some((m) => m.category === card.dataset.category);
-    card.classList.toggle("sorting-card-highlight", match);
-    card.classList.toggle("sorting-card-dim", !match);
+    const match = data.matches.find((m) => m.category === card.dataset.category);
+    card.classList.remove("sorting-card-highlight", "sorting-card-reject", "sorting-card-dim");
+    if (match && match.status === "accept") {
+      card.classList.add("sorting-card-highlight");
+    } else if (match && match.status === "reject") {
+      card.classList.add("sorting-card-reject");
+    } else {
+      card.classList.add("sorting-card-dim");
+    }
   });
 
   resultBox.scrollIntoView({ behavior: "smooth", block: "center" });

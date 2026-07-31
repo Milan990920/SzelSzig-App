@@ -731,16 +731,38 @@ h2.campus-subtitle {
 }
 
 .sorting-card {
-  transition: opacity 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .sorting-card-highlight {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  border-color: var(--green);
 }
 
 .sorting-card-dim {
   opacity: 0.35;
+}
+
+.sorting-card-reject {
+  opacity: 0.75;
+  border-color: var(--red);
+}
+
+.sorting-card-reject::after {
+  content: "🚫 Ide NE dobd!";
+  position: absolute;
+  top: 12px;
+  right: -34px;
+  transform: rotate(40deg);
+  background: var(--red);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 40px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .sorting-grid {
