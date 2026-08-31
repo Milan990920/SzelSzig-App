@@ -92,6 +92,16 @@ for _, row in df.iterrows():
         "area": terulet,
     })
 
+# Ismert hibás GPS-koordináták javítása a forrás Excelben (elírás/rossz sor).
+# Ellenőrizve a település valós (Wikipedia-beli) középpontja alapján.
+KNOWN_COORD_FIXES = {
+    "Csákánydoroszló – Fő utca, Polg. Hivatal": (46.97282, 16.50466),
+    "Csempeszkopács – Hunyadi János utca": (47.15562, 16.80891),
+}
+for s in szigetek:
+    if s["name"] in KNOWN_COORD_FIXES:
+        s["lat"], s["lng"] = KNOWN_COORD_FIXES[s["name"]]
+
 print(f"szigetek: {len(szigetek)} (skipped {skipped_szigetek})")
 
 # ---------------------------------------------------------------------------

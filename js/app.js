@@ -256,6 +256,55 @@ function setupAddressSearch() {
 // ---------------------------------------------------------------------------
 
 let reportLocation = null;
+let reportActiveType = "waste";
+
+const REPORT_TYPE_OPTIONS = {
+  waste: [
+    "Sérült gyűjtőedény",
+    "Nagyobb mennyiségű szemetelés",
+    "Szemetelés",
+    "Tele / túltöltött edény",
+    "Illegális hulladéklerakás",
+    "Egyéb hulladékkezelési probléma",
+  ],
+  app: ["Fejlesztési javaslat", "Hibajavítási javaslat", "Egyéb app visszajelzés"],
+};
+
+const REPORT_TYPE_TEXT = {
+  waste: {
+    lead: "Sérült gyűjtőedényt, tele konténert vagy illegális hulladéklerakást láttál? Jelentsd be fotóval és helyszínnel — ez segít a szolgáltatónak gyorsabban reagálni, telefonos ügyfélszolgálat nélkül.",
+    submitLabel: "Bejelentés elküldése",
+    note: "Ez a demó verzió a bejelentést egy előkészített e-mailben nyitja meg (nincs még saját szerver mögötte) — a <strong>fényképet ilyenkor kézzel kell csatolni</strong> a kiküldés előtt. Éles bevezetésnél ez egyenesen a szolgáltató ügyfélszolgálati rendszerébe futna be, fotóval és GPS-pozícióval együtt, kézi lépés nélkül.",
+  },
+  app: {
+    lead: "Hiányzik egy funkció, hibát találtál az appban, vagy csak van egy jó ötleted? Írd meg — ez a visszajelzés közvetlenül az app fejlesztéséhez segít, nem a hulladékszállítóhoz megy.",
+    submitLabel: "Javaslat elküldése",
+    note: "Ez a demó verzió egyelőre nincs bekötve élő postafiókhoz — a fejlesztő hamarosan beállítja a fogadó e-mail címet. Addig is minden ötletet szívesen fogadunk, csak egy kicsit később jut el a fejlesztőhöz.",
+  },
+};
+
+function setReportType(type) {
+  reportActiveType = type;
+
+  document.querySelectorAll(".report-type-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.reportType === type);
+  });
+
+  const select = document.getElementById("report-type");
+  select.innerHTML = REPORT_TYPE_OPTIONS[type].map((opt) => `<option value="${opt}">${opt}</option>`).join("");
+
+  document.getElementById("report-waste-fields").hidden = type !== "waste";
+  document.getElementById("report-app-fields").hidden = type !== "app";
+
+  const text = REPORT_TYPE_TEXT[type];
+  document.getElementById("report-lead").textContent = text.lead;
+  document.getElementById("report-note").innerHTML = text.note;
+  const submitBtn = document.getElementById("report-submit-btn");
+  submitBtn.textContent = text.submitLabel;
+  submitBtn.classList.toggle("submit-btn-app", type === "app");
+
+  document.getElementById("report-status").hidden = true;
+}
 
 function setupReportForm() {
   const form = document.getElementById("report-form");
@@ -263,6 +312,12 @@ function setupReportForm() {
   const preview = document.getElementById("report-photo-preview");
   const locateBtn = document.getElementById("report-locate-btn");
   const locationText = document.getElementById("report-location-text");
+  const statusEl = document.getElementById("report-status");
+
+  document.querySelectorAll(".report-type-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setReportType(btn.dataset.reportType));
+  });
+  setReportType("waste");
 
   photoInput.addEventListener("change", () => {
     const file = photoInput.files[0];
@@ -300,8 +355,18 @@ function setupReportForm() {
     e.preventDefault();
     const type = document.getElementById("report-type").value;
     const desc = document.getElementById("report-desc").value.trim();
-    const hasPhoto = photoInput.files.length > 0;
 
+    if (reportActiveType === "app") {
+      // Az app-visszajelzéseknek egyelőre nincs beállítva fogadó e-mail cím,
+      // ezért ezt még nem küldjük el sehova — csak visszajelzünk a felületen.
+      const email = document.getElementById("report-reply-email").value.trim();
+      statusEl.hidden = false;
+      statusEl.textContent = "Köszönjük az ötletet! 🙌 Ez a demó egyelőre nincs bekötve élő postafiókhoz, de a fejlesztő hamarosan beállítja — addig a beírt szöveg sajnos nem kerül automatikusan elküldésre.";
+      console.log("SzelSzig App javaslat (nincs elküldve):", { type, desc, email });
+      return;
+    }
+
+    const hasPhoto = photoInput.files.length > 0;
     const lines = [
       `Típus: ${type}`,
       `Leírás: ${desc || "(nincs megadva)"}`,
@@ -483,6 +548,11 @@ function setupCampusLightbox() {
     lightboxImg.src = planImg.src;
     lightboxImg.alt = planImg.alt;
     lightbox.classList.add("open");
+    // Mobilon a kép szélesebb a képernyőnél — nyitáskor vízszintesen
+    // középre görgetjük, hogy ne csak a bal szélét lássuk elsőre.
+    requestAnimationFrame(() => {
+      lightbox.scrollLeft = (lightbox.scrollWidth - lightbox.clientWidth) / 2;
+    });
   });
   const close = () => lightbox.classList.remove("open");
   closeBtn.addEventListener("click", close);
@@ -600,9 +670,14 @@ function updateCalMap() {
   setTimeout(() => calMap.invalidateSize(), 50);
 
   const town = calSelectedTown;
+
+  // Azonnal megmutatjuk a szelektívsziget-adatból becsült pozíciót (ha van),
+  // amíg a háttérben lefut a pontos helymeghatározás (OpenStreetMap Nominatim
+  // - ugyanaz, mint a térkép cím szerinti keresőjénél). Néhány településnél a
+  // forrás GPS-adat pontatlannak bizonyult, ezért ez a lekérdezés minden
+  // településnél lefut, és találat esetén felülírja/pontosítja a pöttyöt.
   if (town.lat && town.lng) {
     placeCalMarker(town.lat, town.lng, town.name);
-    return;
   }
 
   if (calGeocodeCache.has(town.name)) {
@@ -623,9 +698,12 @@ function updateCalMap() {
         placeCalMarker(lat, lng, town.name);
       } else {
         calGeocodeCache.set(town.name, null);
+        // nincs jobb találat — marad a becsült (szigetadatból számolt) pozíció, ha volt
       }
     })
-    .catch(() => {});
+    .catch(() => {
+      // hálózati hiba — marad a becsült pozíció, ha volt, különben üres marad a térkép
+    });
 }
 
 function renderCalMonth() {
@@ -756,7 +834,50 @@ function setupFilters() {
   document.getElementById("locate-btn").addEventListener("click", locateMe);
 }
 
+// ---------------------------------------------------------------------------
+// Sötét / világos mód
+// ---------------------------------------------------------------------------
+
+function setupThemeToggle() {
+  const btn = document.getElementById("theme-toggle");
+  const root = document.documentElement;
+
+  let stored = null;
+  try {
+    stored = localStorage.getItem("szelszig-theme");
+  } catch (e) {
+    // localStorage nem elérhető (pl. privát böngészés) — marad a rendszerbeállítás
+  }
+  if (stored === "dark" || stored === "light") {
+    root.setAttribute("data-theme", stored);
+  }
+
+  function isDark() {
+    const explicit = root.getAttribute("data-theme");
+    if (explicit === "dark") return true;
+    if (explicit === "light") return false;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+
+  function updateIcon() {
+    btn.textContent = isDark() ? "☀️" : "🌙";
+  }
+  updateIcon();
+
+  btn.addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try {
+      localStorage.setItem("szelszig-theme", next);
+    } catch (e) {
+      // nem tudjuk elmenteni a választást, de a mostani munkamenetben érvényben marad
+    }
+    updateIcon();
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  setupThemeToggle();
   initMap();
   setupWasteCalendar();
   renderTips();

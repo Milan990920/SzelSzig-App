@@ -1,8 +1,11 @@
 :root {
+  color-scheme: light;
   --teal: #00acc1;
   --teal-dark: #00838f;
   --green: #2e8b57;
   --red: #c0392b;
+  --purple: #6c4fd6;
+  --purple-dark: #5637b8;
   --bg: #f4f9fa;
   --card-bg: #ffffff;
   --text: #1c2b2f;
@@ -10,6 +13,50 @@
   --border: #dfeaec;
   --radius: 14px;
   --shadow: 0 4px 16px rgba(0, 40, 45, 0.08);
+  --tint-teal: #e6f7f9;
+  --tint-teal-soft: #eefaf9;
+  --tint-yellow: #fff9e8;
+  --tint-yellow-border: #f2e3ad;
+  --tint-red: #fff6f5;
+  --tint-grey: #f8fbfb;
+}
+
+/* Sötét mód: alapértelmezetten a rendszerbeállítást követi, a fejlécen lévő
+   gombbal felül lehet bírálni (a választás a böngészőben, localStorage-ban marad meg). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --teal-dark: #57d2e3;
+    --bg: #0f1719;
+    --card-bg: #1a2528;
+    --text: #e7f1f2;
+    --muted: #9bb2b6;
+    --border: #2b3a3d;
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+    --tint-teal: #173035;
+    --tint-teal-soft: #142526;
+    --tint-yellow: #332b12;
+    --tint-yellow-border: #5c4c1e;
+    --tint-red: #38201e;
+    --tint-grey: #1f2b2d;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --teal-dark: #57d2e3;
+  --bg: #0f1719;
+  --card-bg: #1a2528;
+  --text: #e7f1f2;
+  --muted: #9bb2b6;
+  --border: #2b3a3d;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --tint-teal: #173035;
+  --tint-teal-soft: #142526;
+  --tint-yellow: #332b12;
+  --tint-yellow-border: #5c4c1e;
+  --tint-red: #38201e;
+  --tint-grey: #1f2b2d;
 }
 
 * { box-sizing: border-box; }
@@ -31,7 +78,7 @@ header.topbar {
   align-items: center;
   gap: 12px;
   padding: 10px 18px;
-  background: #fff;
+  background: var(--card-bg);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
@@ -80,7 +127,7 @@ nav.tabs button {
 }
 
 nav.tabs button:hover {
-  background: #e6f7f9;
+  background: var(--tint-teal);
   color: var(--teal-dark);
 }
 
@@ -88,6 +135,24 @@ nav.tabs button.active {
   background: var(--teal);
   color: #fff;
 }
+
+.theme-toggle {
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 1.05rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover { border-color: var(--teal); }
 
 /* ---------- Layout ---------- */
 main {
@@ -212,7 +277,7 @@ p.lead {
   padding: 7px 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--card-bg);
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
@@ -257,17 +322,23 @@ button.locate-btn:hover { background: #256e46; }
   margin-top: 10px;
   font-size: 0.8rem;
   color: var(--muted);
-  background: #fff9e8;
-  border: 1px solid #f2e3ad;
+  background: var(--tint-yellow);
+  border: 1px solid var(--tint-yellow-border);
   border-radius: 10px;
   padding: 8px 12px;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--card-bg);
+  color: var(--text);
 }
 
 .leaflet-popup-content b { color: var(--teal-dark); }
 .leaflet-popup-content .frac {
   display: inline-block;
   font-size: 0.72rem;
-  background: #e6f7f9;
+  background: var(--tint-teal);
   color: var(--teal-dark);
   padding: 2px 7px;
   border-radius: 999px;
@@ -301,6 +372,55 @@ button.locate-btn:hover { background: #256e46; }
 
 .leaflet-popup-content .popup-details ul.accepted-list li {
   margin-bottom: 4px;
+}
+
+/* ---------- Tippek: elfogadás/elutasítás áttekintő ---------- */
+.tips-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.tips-overview-card {
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  border: 2px solid;
+}
+
+.tips-overview-card h3 {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+
+.tips-overview-card ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.tips-overview-card li { margin-bottom: 4px; }
+
+.tips-overview-yes {
+  background: var(--tint-teal-soft);
+  border-color: var(--green);
+}
+
+.tips-overview-yes h3 { color: var(--green); }
+
+.tips-overview-no {
+  background: var(--tint-red);
+  border-color: var(--red);
+}
+
+.tips-overview-no h3 { color: var(--red); }
+
+.section-subtitle {
+  font-size: 1.1rem;
+  color: var(--teal-dark);
+  margin: 26px 0 12px;
 }
 
 /* ---------- Cards grid ---------- */
@@ -357,7 +477,7 @@ table.calendar th, table.calendar td {
 }
 
 table.calendar th {
-  background: #eefaf9;
+  background: var(--tint-teal-soft);
   color: var(--teal-dark);
   font-size: 0.85rem;
 }
@@ -401,7 +521,7 @@ table.calendar tr:last-child td { border-bottom: none; }
 }
 
 .pillbar span {
-  background: #e6f7f9;
+  background: var(--tint-teal);
   color: var(--teal-dark);
   font-size: 0.8rem;
   font-weight: 600;
@@ -410,6 +530,40 @@ table.calendar tr:last-child td { border-bottom: none; }
 }
 
 /* ---------- Report form ---------- */
+.report-type-toggle {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  max-width: 520px;
+}
+
+.report-type-btn {
+  flex: 1;
+  min-width: 200px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.report-type-btn.waste.active {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.report-type-btn.app.active {
+  background: var(--purple);
+  border-color: var(--purple);
+  color: #fff;
+}
+
 .report-form {
   background: var(--card-bg);
   border: 1px solid var(--border);
@@ -420,6 +574,18 @@ table.calendar tr:last-child td { border-bottom: none; }
   flex-direction: column;
   gap: 14px;
   max-width: 520px;
+}
+
+#report-waste-fields,
+#report-app-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#report-waste-fields[hidden],
+#report-app-fields[hidden] {
+  display: none;
 }
 
 .report-form label {
@@ -433,7 +599,8 @@ table.calendar tr:last-child td { border-bottom: none; }
 
 .report-form select,
 .report-form textarea,
-.report-form input[type="file"] {
+.report-form input[type="file"],
+.report-form input[type="email"] {
   font-family: inherit;
   font-size: 0.9rem;
   padding: 9px 12px;
@@ -441,10 +608,13 @@ table.calendar tr:last-child td { border-bottom: none; }
   border-radius: 10px;
   font-weight: 400;
   resize: vertical;
+  background: var(--card-bg);
+  color: var(--text);
 }
 
 .report-form select:focus,
-.report-form textarea:focus {
+.report-form textarea:focus,
+.report-form input[type="email"]:focus {
   outline: 2px solid var(--teal);
   outline-offset: 1px;
 }
@@ -483,6 +653,19 @@ button.submit-btn {
 
 button.submit-btn:hover { background: #a53225; }
 
+button.submit-btn.submit-btn-app { background: var(--purple); }
+button.submit-btn.submit-btn-app:hover { background: var(--purple-dark); }
+
+.report-status {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--teal-dark);
+  background: var(--tint-teal);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
 /* ---------- Campus (Egyetem) ---------- */
 h2.campus-subtitle {
   font-size: 1.1rem;
@@ -499,7 +682,7 @@ h2.campus-subtitle {
 
 .campus-chip {
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--card-bg);
   color: var(--text);
   padding: 8px 14px;
   border-radius: 999px;
@@ -525,7 +708,7 @@ h2.campus-subtitle {
 
 .campus-floor-tab {
   border: 1px solid var(--border);
-  background: #eefaf9;
+  background: var(--tint-teal-soft);
   color: var(--teal-dark);
   padding: 7px 13px;
   border-radius: 8px;
@@ -542,7 +725,7 @@ h2.campus-subtitle {
 
 .campus-plan-wrap {
   position: relative;
-  background: #fff;
+  background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -563,7 +746,7 @@ h2.campus-subtitle {
   right: 20px;
   font-size: 0.75rem;
   color: var(--muted);
-  background: #fff;
+  background: var(--card-bg);
   padding: 3px 9px;
   border-radius: 999px;
   border: 1px solid var(--border);
@@ -579,11 +762,22 @@ h2.campus-subtitle {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  text-align: center;
 }
 
 .lightbox.open { display: flex; }
 
+.lightbox-hint {
+  display: none;
+  color: #dff3f5;
+  font-size: 0.82rem;
+  margin: 0 0 12px;
+}
+
 .lightbox img {
+  display: inline-block;
   max-width: 96vw;
   max-height: 92vh;
   border-radius: 6px;
@@ -591,14 +785,15 @@ h2.campus-subtitle {
 }
 
 .lightbox-close {
-  position: absolute;
-  top: 18px;
-  right: 26px;
+  position: fixed;
+  top: 14px;
+  right: 20px;
   color: #fff;
   font-size: 2.2rem;
   line-height: 1;
   cursor: pointer;
   font-weight: 300;
+  z-index: 201;
 }
 
 .campus-legend {
@@ -667,7 +862,7 @@ h2.campus-subtitle {
   align-items: center;
   gap: 7px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--card-bg);
   padding: 7px 12px 7px 8px;
   border-radius: 999px;
   font-size: 0.8rem;
@@ -679,7 +874,7 @@ h2.campus-subtitle {
 
 .sorting-chip:hover {
   border-color: var(--red);
-  background: #fff6f5;
+  background: var(--tint-red);
 }
 
 .sorting-chip-icon {
@@ -725,7 +920,7 @@ h2.campus-subtitle {
 }
 
 .sorting-pill.pill-no {
-  background: #fff;
+  background: var(--card-bg);
   color: var(--pill-color, var(--red));
   border: 2px solid var(--pill-color, var(--red));
 }
@@ -865,7 +1060,7 @@ h2.campus-subtitle {
   border: 1px solid transparent;
 }
 
-.cal-town-row:hover { background: #eefaf9; }
+.cal-town-row:hover { background: var(--tint-teal-soft); }
 
 .cal-town-row.active {
   background: var(--teal);
@@ -937,8 +1132,8 @@ h2.campus-subtitle {
 .cal-town-note {
   font-size: 0.8rem;
   color: var(--muted);
-  background: #fff9e8;
-  border: 1px solid #f2e3ad;
+  background: var(--tint-yellow);
+  border: 1px solid var(--tint-yellow-border);
   border-radius: 8px;
   padding: 6px 10px;
   margin: 6px 0 0;
@@ -963,7 +1158,7 @@ h2.campus-subtitle {
 
 .cal-month-nav button {
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--card-bg);
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -972,7 +1167,7 @@ h2.campus-subtitle {
   line-height: 1;
 }
 
-.cal-month-nav button:hover { background: #eefaf9; }
+.cal-month-nav button:hover { background: var(--tint-teal-soft); }
 
 .cal-legend {
   display: flex;
@@ -1003,7 +1198,7 @@ h2.campus-subtitle {
 .cal-day {
   aspect-ratio: 1;
   border-radius: 8px;
-  background: #f8fbfb;
+  background: var(--tint-grey);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1042,7 +1237,7 @@ h2.campus-subtitle {
 
 .cal-toggle button {
   border: none;
-  background: #fff;
+  background: var(--card-bg);
   padding: 6px 13px;
   font-size: 0.78rem;
   font-weight: 600;
@@ -1070,7 +1265,7 @@ h2.campus-subtitle {
   gap: 10px;
   padding: 7px 10px;
   border-radius: 8px;
-  background: #f8fbfb;
+  background: var(--tint-grey);
   font-size: 0.85rem;
 }
 
@@ -1089,6 +1284,19 @@ footer.sitefoot {
   nav.tabs { width: 100%; justify-content: space-between; margin-left: 0; }
   nav.tabs button { flex: 1; padding: 9px 6px; font-size: 0.8rem; }
   #map { height: 52vh; }
+
+  /* Az egyetemi alaprajzok fekvő tájolású, részletgazdag rajzok — keskeny
+     telefonon a "ráférjen a képernyőre" nagyítás alig nagyítana rajtuk.
+     Ezért itt mindig egy jól olvasható, a képernyőnél nagyobb méretben
+     jelenítjük meg, görgetéssel/csippentéssel lehet körbenézni rajta. */
+  .lightbox { align-items: flex-start; padding: 54px 14px 20px; }
+  .lightbox-hint { display: block; }
+  .lightbox img {
+    max-width: none;
+    max-height: none;
+    width: max(94vw, 760px);
+    height: auto;
+  }
 }
 
 @media (max-width: 780px) {

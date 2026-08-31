@@ -26,6 +26,7 @@
       <button data-target="view-campus">Egyetem</button>
       <button data-target="view-about">Rólunk</button>
     </nav>
+    <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Sötét/világos mód váltása" title="Sötét/világos mód">🌙</button>
   </header>
 
   <main>
@@ -98,28 +99,49 @@
         </div>
       </div>
 
-      <p class="map-note">A szelektív és zöldhulladék-dátumok az STKH Kft. 2026-os gyűjtési naptára alapján, 213 településre. A heti kommunális gyűjtési nap minden e naptárban szereplő héten ismétlődik — néhány településnél (lásd a megjegyzést) körzetenként vagy utcánként eltérhet, ezt célszerű a stkh.hu oldalon ellenőrizni.</p>
+      <p class="map-note">A szelektív és zöldhulladék-dátumok az STKH Kft. 2026-os gyűjtési naptára alapján, 213 településre. A heti kommunális gyűjtési nap minden e naptárban szereplő héten ismétlődik — néhány településnél (lásd a megjegyzést) körzetenként vagy utcánként eltérhet, ezt célszerű a stkh.hu oldalon ellenőrizni. A térképen látható pont mindig egy élő helymeghatározással (OpenStreetMap) pontosított pozíció — ha a forrásadat pontatlan volt, ez a keresés automatikusan javítja.</p>
     </section>
 
     <section id="view-tips" class="view">
       <h1 class="page-title">Szelektálási tippek</h1>
       <p class="lead">Gyors trükkök, hogy a hulladékod valóban újrahasznosítható legyen.</p>
+
+      <div class="tips-overview">
+        <div class="tips-overview-card tips-overview-yes">
+          <h3>✅ Ide való a szelektív gyűjtőbe</h3>
+          <ul>
+            <li>Papír, üveg, műanyag és fém csomagolási hulladék – tiszta, száraz állapotban.</li>
+            <li>Az elkülönített hulladék a válogatóközpontba kerül, majd újrahasznosítóknak, ahol új termékek alapanyaga lesz belőle.</li>
+            <li>Családi házaknál a házhoz menő gyűjtéssel, társasházaknál gyűjtőszigeten, vagy bármelyik hulladékudvarban is leadható.</li>
+          </ul>
+        </div>
+        <div class="tips-overview-card tips-overview-no">
+          <h3>❌ Ide NE dobd!</h3>
+          <ul>
+            <li>Vegyszerek, gyógyszerek, elemek és egyéb veszélyes hulladék – ezek hulladékudvarba valók.</li>
+            <li>Konyhai ételmaradék, textil és síküveg (pl. ablaküveg, tükör) – ezek nem szelektív hulladékok.</li>
+            <li>Szennyezett, ételmaradékos csomagolás – előbb öblítsd ki, csak utána dobd a szigetre.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2 class="section-subtitle">Frakciónkénti tippek</h2>
       <div class="grid" id="tips-grid"></div>
     </section>
 
     <section id="view-report" class="view">
       <h1 class="page-title">Hibabejelentés</h1>
-      <p class="lead">Sérült gyűjtőedényt, tele konténert vagy illegális hulladéklerakást láttál? Jelentsd be fotóval és helyszínnel — ez segít a szolgáltatónak gyorsabban reagálni, telefonos ügyfélszolgálat nélkül.</p>
+      <p class="lead" id="report-lead">Sérült gyűjtőedényt, tele konténert vagy illegális hulladéklerakást láttál? Jelentsd be fotóval és helyszínnel — ez segít a szolgáltatónak gyorsabban reagálni, telefonos ügyfélszolgálat nélkül.</p>
+
+      <div class="report-type-toggle" id="report-type-toggle">
+        <button type="button" class="report-type-btn waste active" data-report-type="waste">🗑️ Szemetelés / hulladékhiba</button>
+        <button type="button" class="report-type-btn app" data-report-type="app">💡 App javaslat / hibajavítás</button>
+      </div>
 
       <form class="report-form" id="report-form">
         <label>
           Típus
-          <select id="report-type">
-            <option value="Sérült gyűjtőedény">Sérült gyűjtőedény</option>
-            <option value="Tele / túltöltött edény">Tele / túltöltött edény</option>
-            <option value="Illegális hulladéklerakás">Illegális hulladéklerakás</option>
-            <option value="Egyéb probléma">Egyéb probléma</option>
-          </select>
+          <select id="report-type"></select>
         </label>
 
         <label>
@@ -127,21 +149,31 @@
           <textarea id="report-desc" rows="4" placeholder="Írd le röviden, mit tapasztaltál..."></textarea>
         </label>
 
-        <label>
-          Fénykép
-          <input type="file" id="report-photo" accept="image/*" capture="environment" />
-        </label>
-        <img id="report-photo-preview" class="photo-preview" hidden alt="Csatolt fénykép előnézete" />
+        <div id="report-waste-fields">
+          <label>
+            Fénykép
+            <input type="file" id="report-photo" accept="image/*" capture="environment" />
+          </label>
+          <img id="report-photo-preview" class="photo-preview" hidden alt="Csatolt fénykép előnézete" />
 
-        <div class="report-location">
-          <button type="button" class="locate-btn" id="report-locate-btn">📍 Helyszín csatolása</button>
-          <span id="report-location-text" class="report-location-text">Nincs helyszín csatolva</span>
+          <div class="report-location">
+            <button type="button" class="locate-btn" id="report-locate-btn">📍 Helyszín csatolása</button>
+            <span id="report-location-text" class="report-location-text">Nincs helyszín csatolva</span>
+          </div>
         </div>
 
-        <button type="submit" class="submit-btn">Bejelentés elküldése</button>
+        <div id="report-app-fields" hidden>
+          <label>
+            Visszajelzési e-mail (opcionális)
+            <input type="email" id="report-reply-email" placeholder="ha válaszolhatunk neked" />
+          </label>
+        </div>
+
+        <button type="submit" class="submit-btn" id="report-submit-btn">Bejelentés elküldése</button>
+        <p class="report-status" id="report-status" hidden></p>
       </form>
 
-      <p class="map-note">Ez a demó verzió a bejelentést egy előkészített e-mailben nyitja meg (nincs még saját szerver mögötte) — a <strong>fényképet ilyenkor kézzel kell csatolni</strong> a kiküldés előtt. Éles bevezetésnél ez egyenesen a szolgáltató ügyfélszolgálati rendszerébe futna be, fotóval és GPS-pozícióval együtt, kézi lépés nélkül.</p>
+      <p class="map-note" id="report-note">Ez a demó verzió a bejelentést egy előkészített e-mailben nyitja meg (nincs még saját szerver mögötte) — a <strong>fényképet ilyenkor kézzel kell csatolni</strong> a kiküldés előtt. Éles bevezetésnél ez egyenesen a szolgáltató ügyfélszolgálati rendszerébe futna be, fotóval és GPS-pozícióval együtt, kézi lépés nélkül.</p>
     </section>
 
     <section id="view-campus" class="view campus-view">
@@ -179,6 +211,7 @@
 
     <div class="lightbox" id="campus-lightbox">
       <span class="lightbox-close" id="campus-lightbox-close">&times;</span>
+      <p class="lightbox-hint">↔️ Húzd/görgesd, hogy körbenézz a nagyított alaprajzon, vagy csippentve nagyíts tovább.</p>
       <img id="campus-lightbox-img" src="" alt="Alaprajz nagyítva" />
     </div>
 
