@@ -883,14 +883,20 @@ h2.campus-subtitle {
 
 .sorting-result {
   display: flex;
+  flex-direction: column;
   gap: 14px;
-  align-items: center;
   background: var(--card-bg);
   border: 2px solid var(--red);
   border-radius: var(--radius);
   padding: 16px 18px;
   margin-bottom: 16px;
   box-shadow: var(--shadow);
+}
+
+.sorting-result-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .sorting-result-icon {
@@ -900,29 +906,54 @@ h2.campus-subtitle {
 
 .sorting-result-title {
   font-weight: 700;
-  font-size: 1rem;
-  margin-bottom: 8px;
+  font-size: 1.05rem;
 }
 
-.sorting-result-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.sorting-bins {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
 }
 
-.sorting-pill {
-  font-size: 0.82rem;
+.sorting-bin {
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  border: 2px solid transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.sorting-bin-name {
+  display: block;
   font-weight: 700;
-  padding: 5px 12px;
-  border-radius: 999px;
-  color: #fff;
-  background: var(--pill-color, var(--muted));
+  font-size: 0.95rem;
 }
 
-.sorting-pill.pill-no {
-  background: var(--card-bg);
-  color: var(--pill-color, var(--red));
-  border: 2px solid var(--pill-color, var(--red));
+.sorting-bin-verdict {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.sorting-bin-off {
+  background: var(--tint-grey);
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.sorting-bin-match {
+  background: var(--bin-color);
+  color: var(--bin-text, #fff);
+  border-color: var(--green);
+  transform: scale(1.06);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+.sorting-bin-reject {
+  background: var(--tint-red);
+  color: var(--red);
+  border-color: var(--red);
 }
 
 .sorting-card {

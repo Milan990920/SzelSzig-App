@@ -85,13 +85,19 @@ STKH Kft./Sopron Holding Zrt. által biztosított munkafájljai). Frissítéshez
 2. Futtasd: `python3 scripts/build_data.py` — ez felülírja a `js/data.js` fájlt.
 3. A `telepulesek.csv` + `gyujtesi_napok.csv` alapján épül fel a `WASTE_CALENDAR_TOWNS`
    tömb (Hulladéknaptár funkció). A térképi koordinátákat a szkript a már meglévő
-   szelektívsziget-adatokból próbálja kitalálni (azonos településnevű szigetek GPS-
-   pozícióinak átlagolásával) — amelyik településhez nincs saját szelektív sziget, ott
-   a felület a térkép megnyitásakor a meglévő címkereséshez hasonlóan, a háttérben
-   lekérdezi a település koordinátáit (OpenStreetMap Nominatim szolgáltatással). Ez kb.
-   213 településből kb. 175-nél talál rögtön koordinátát, a többinél az élő oldalon
-   futásidőben történik a keresés.
-4. A tippek (`SZELSZIG_TIPS`) egyelőre kézzel szerkesztett tartalom a `js/data.js` alján.
+   szelektívsziget-adatokból próbálja kitalálni: elsőként azonos településnevű szigetek
+   GPS-pozícióinak átlagolásával, másodikként (ha ez nem talál egyezést — pl. egy
+   nagyobb város külterületi majorja/településrésze, ami a szigetadatban nem önálló
+   előtagként szerepel) a teljes szigetnévben való kereséssel. Amelyik településhez így
+   sem található koordináta, ott a felület a térkép megnyitásakor a meglévő
+   címkereséshez hasonlóan, a háttérben lekérdezi a település koordinátáit (OpenStreetMap
+   Nominatim szolgáltatással). Ez kb. 213 településből kb. 176-nál talál rögtön
+   koordinátát, a többinél az élő oldalon futásidőben történik a keresés.
+4. Néhány település (eddig azonosítva: Csákánydoroszló, Csempeszkopács, Torony) forrás-
+   GPS-koordinátája tévesen messze esett a valós helytől — ezeket a `KNOWN_COORD_FIXES`
+   szótár javítja a szkriptben (ellenőrizve Wikipédia-adat alapján). Ha további ilyen
+   hibás pontot találsz, ide vegyél fel egy új bejegyzést.
+5. A tippek (`SZELSZIG_TIPS`) egyelőre kézzel szerkesztett tartalom a `js/data.js` alján.
 
 **Adatminőségi megjegyzés:** a forrás Excelekben 2 szigetsor és 2 másik sor koordinátája
 értelmezhetetlen/hibás volt (pl. szélesség=hosszúság, vagy hiányzó számjegy) — ezeket a

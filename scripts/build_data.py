@@ -97,6 +97,7 @@ for _, row in df.iterrows():
 KNOWN_COORD_FIXES = {
     "Csákánydoroszló – Fő utca, Polg. Hivatal": (46.97282, 16.50466),
     "Csempeszkopács – Hunyadi János utca": (47.15562, 16.80891),
+    "Torony – Szabadság utca": (47.23626, 16.53706),
 }
 for s in szigetek:
     if s["name"] in KNOWN_COORD_FIXES:
@@ -270,6 +271,15 @@ if f_telepulesek and f_gyujtes:
     for _, row in df_t.iterrows():
         town = str(row["telepules"]).strip()
         coords = town_coords.get(town)
+        if not coords:
+            # Néhány kisebb településrész (pl. egy nagyobb város külterületi
+            # majorja) a szigetadatban nem önálló "telepules" előtagként,
+            # hanem a közterület-mezőben szerepel (pl. "Kapuvár – Öntésmajor,
+            # Szövetkezeti bolt"). Ilyenkor a teljes szigetnév alapján
+            # keresünk rá a település nevére.
+            substr_matches = [(s["lat"], s["lng"]) for s in szigetek if town in s["name"]]
+            if substr_matches:
+                coords = substr_matches
         megjegyzes = row["megjegyzes"]
         entry = {
             "name": town,

@@ -495,27 +495,47 @@ function renderSortingIconGrid(filter = "") {
   });
 }
 
+function readableTextOn(hex) {
+  // Egyszerű luminancia-becslés: sötét háttérre fehér, világosra sötét szöveg.
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return "#fff";
+  const [r, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16));
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? "#1c2b2f" : "#ffffff";
+}
+
 function selectSortingItem(text) {
   const data = SORTING_INDEX.get(text);
   if (!data) return;
 
   const resultBox = document.getElementById("sorting-result");
   resultBox.hidden = false;
+
+  // Kategóriánként egy nagy, jól látható doboz — amelyikbe a tétel való, az
+  // kiemelve (a saját frakció-színével, zöld kerettel), a többi elhalványítva.
+  const binsHtml = CAMPUS_SORTING.map((s) => {
+    const match = data.matches.find((m) => m.category === s.category);
+    if (match && match.status === "accept") {
+      return `<div class="sorting-bin sorting-bin-match" style="--bin-color:${s.color}; --bin-text:${readableTextOn(s.color)}">
+        <span class="sorting-bin-name">${s.category}</span>
+        <span class="sorting-bin-verdict">✓ Ide dobd!</span>
+      </div>`;
+    }
+    if (match && match.status === "reject") {
+      return `<div class="sorting-bin sorting-bin-reject">
+        <span class="sorting-bin-name">${s.category}</span>
+        <span class="sorting-bin-verdict">✕ Ide NE!</span>
+      </div>`;
+    }
+    return `<div class="sorting-bin sorting-bin-off"><span class="sorting-bin-name">${s.category}</span></div>`;
+  }).join("");
+
   resultBox.innerHTML = `
-    <span class="sorting-result-icon">${data.icon}</span>
-    <div>
-      <div class="sorting-result-title">${text}</div>
-      <div class="sorting-result-pills">
-        ${data.matches
-          .map(
-            (m) =>
-              `<span class="sorting-pill ${m.status === "accept" ? "pill-yes" : "pill-no"}" style="--pill-color:${m.color}">
-                ${m.status === "accept" ? "✔" : "✘"} ${m.category}${m.status === "reject" ? " – ide NE" : ""}
-              </span>`
-          )
-          .join("")}
-      </div>
-    </div>`;
+    <div class="sorting-result-head">
+      <span class="sorting-result-icon">${data.icon}</span>
+      <div class="sorting-result-title">${text} — hova dobjam?</div>
+    </div>
+    <div class="sorting-bins">${binsHtml}</div>`;
 
   document.querySelectorAll(".sorting-card").forEach((card) => {
     const match = data.matches.find((m) => m.category === card.dataset.category);
@@ -671,13 +691,14 @@ function updateCalMap() {
 
   const town = calSelectedTown;
 
-  // Azonnal megmutatjuk a szelektívsziget-adatból becsült pozíciót (ha van),
-  // amíg a háttérben lefut a pontos helymeghatározás (OpenStreetMap Nominatim
-  // - ugyanaz, mint a térkép cím szerinti keresőjénél). Néhány településnél a
-  // forrás GPS-adat pontatlannak bizonyult, ezért ez a lekérdezés minden
-  // településnél lefut, és találat esetén felülírja/pontosítja a pöttyöt.
+  // Ha van a szigetadatból (kézzel ellenőrzött) koordinánk, azt használjuk —
+  // ez megbízhatóbb, mint egy általános névkeresés. Csak azoknál a
+  // településeknél kérünk élő helymeghatározást (OpenStreetMap Nominatim,
+  // ugyanaz, mint a térkép cím szerinti keresőjénél), ahol nincs saját
+  // szigetadat-alapú pozíció.
   if (town.lat && town.lng) {
     placeCalMarker(town.lat, town.lng, town.name);
+    return;
   }
 
   if (calGeocodeCache.has(town.name)) {
