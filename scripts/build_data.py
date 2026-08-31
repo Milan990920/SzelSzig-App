@@ -92,16 +92,107 @@ for _, row in df.iterrows():
         "area": terulet,
     })
 
-# Ismert hibás GPS-koordináták javítása a forrás Excelben (elírás/rossz sor).
+# Ismert hibás GPS-koordináták javítása a forrás Excelben (elírás/rossz sor,
+# vagy egy egész településcsoport hibásan bevitt/eltolt koordinátái — ez
+# utóbbi 2026.08-ban derült ki: egy sor Vas megyei település szigetadata
+# egy nagyjából 20-50 km-es, közel egységes eltolással volt rögzítve).
+# Kulcs: (sziget neve, EREDETI lat, EREDETI lng) — az eredeti koordináta is
+# kell a kulcsba, mert néhány település (pl. Csörötnek) több szigete azonos
+# névvel, de eltérő koordinátával szerepel a forrásban.
 # Ellenőrizve a település valós (Wikipedia-beli) középpontja alapján.
 KNOWN_COORD_FIXES = {
-    "Csákánydoroszló – Fő utca, Polg. Hivatal": (46.97282, 16.50466),
-    "Csempeszkopács – Hunyadi János utca": (47.15562, 16.80891),
-    "Torony – Szabadság utca": (47.23626, 16.53706),
+    ("Csákánydoroszló – Fő utca, Polg. Hivatal", 46.5805, 16.2953): (46.97282, 16.50466),
+    ("Csempeszkopács – Hunyadi János utca", 47.0917, 16.4816): (47.15562, 16.80891),
+    ("Torony – Szabadság utca", 47.23695, 16.54156): (47.23626, 16.53706),
+    ("Csörötnek – Fő út", 46.5653, 16.2225): (46.9466, 16.36783),
+    ("Csörötnek – Fő út", 46.5703, 16.2103): (46.95161, 16.35563),
+    ("Csörötnek – Petőfi Sándor út", 46.5707, 16.2222): (46.952, 16.36753),
+    ("Csörötnek – Vasúti út", 46.571, 16.2203): (46.9523, 16.36563),
+    ("Daraboshegy – Szőcei utca 19. (templom mögött)", 46.573, 16.3407): (46.95951, 16.56914),
+    ("Döbörhegy – Fő u 58 (Vegyesbolt)", 46.5928, 16.421): (46.99016, 16.70518),
+    ("Döröske – Mogyorósi utca", 47.0038, 16.4154): (47.01133, 16.69643),
+    ("Egyházashollós – Arany út", 47.0322, 16.4148): (47.05303, 16.6922),
+    ("Egyházasrádóc – Kossuth L u. / volt Tsz /", 47.0503, 16.3638): (47.08705, 16.6134),
+    ("Egyházasrádóc – Dózsa Gy. u (parkoló )", 47.0512, 16.3643): (47.08795, 16.6139),
+    ("Egyházasrádóc – Kossuth Lajos utca (vasútállomás)", 47.0527, 16.3712): (47.08945, 16.6208),
+    ("Fertőboz – Polgármesteri Hivatal mellett", 47.62087, 16.7656): (47.63666, 16.69926),
+    ("Fertőszentmiklós – Mátrai u.", 47.35399, 16.52416): (47.58533, 16.87052),
+    ("Fertőszentmiklós – Újtelep, Szent Imre u. kereszteződés", 47.34486, 16.52918): (47.58533, 16.87052),
+    ("Gasztony – Fő utca (buszforduló )", 46.5757, 16.2715): (46.96542, 16.45559),
+    ("Gasztony – Fő utca", 46.5752, 16.2645): (46.96492, 16.44859),
+    ("Gasztony – Fő utca (Coop bolt )", 46.5748, 16.2657): (46.96452, 16.44979),
+    ("Gersekarát – Dózsa György utca", 46.5823, 16.4423): (46.97389, 16.74667),
+    ("Gyanógeregye – Petőfi Sándor utca", 47.0717, 16.4556): (47.12333, 16.76472),
+    ("Halogy – Petőfi utca 92", 46.5813, 16.3325): (46.97122, 16.56074),
+    ("Harasztifalu – Fő utca", 47.0305, 16.3304): (47.05083, 16.55279),
+    ("Ivánc – Petőfi Sándor utca", 46.5609, 16.294): (46.93487, 16.49394),
+    ("Ivánc – Thököly Imre utca", 46.562, 16.3003): (46.93597, 16.50024),
+    ("Katafa – Kossuth utca 38", 46.5842, 16.38): (46.97975, 16.63194),
+    ("Kemestaródfa – Csákányi utca", 46.5947, 16.31): (46.99722, 16.5175),
+    ("Kisrákos – Fő út", 46.5127, 16.3004): (46.8613, 16.50033),
+    ("Kisunyom – Temető utca", 47.0832, 16.3841): (47.1466, 16.64205),
+    ("Kondorfa – Alvég utca", 46.5358, 16.2412): (46.89679, 16.40116),
+    ("Kondorfa – Fővég út", 46.5339, 16.2307): (46.89489, 16.39066),
+    ("Kondorfa – Hegy út", 46.5326, 16.2401): (46.89359, 16.40006),
+    ("Kópháza – Kossuth L., Savanyúkút kereszteződés", 47.65651, 16.59097): (47.63806, 16.64278),
+    ("Magyarlak – Kossuth Lajos út", 46.5701, 16.2): (46.95066, 16.33864),
+    ("Magyarlak – Mátyás út", 46.5703, 16.2103): (46.95086, 16.34894),
+    ("Magyarnádalja – Petőfi utca 29", 47.0039, 16.3157): (47, 16.533),
+    ("Magyarszecsőd – Fő út", 47.0211, 16.3901): (47.03251, 16.64551),
+    ("Molnaszecsőd – Kossuth út (Árvíz Presszó )", 47.0236, 16.4046): (47.04581, 16.67683),
+    ("Nagykölked – Fő utca", 47.0357, 16.3312): (47.06556, 16.55222),
+    ("Nagymizdó – Fő utca 45", 46.5926, 16.3919): (46.9915, 16.65488),
+    ("Nemeskolta – Szabadság utca", 47.0832, 16.46): (47.14184, 16.76732),
+    ("Nemeskér – Fő utca 68. (Élelmiszer bolt mellett)", 47.44202, 16.69742): (47.4847, 16.8053),
+    ("Nemesmedves – Fő utca", 46.5947, 16.2402): (46.99722, 16.40083),
+    ("Nádasd – Kossuth út", 46.5818, 16.3632): (46.97001, 16.60562),
+    ("Nádasd – Petőfi út (Coop bolt )", 46.5759, 16.3615): (46.96411, 16.60392),
+    ("Nádasd – Táncsics út (Mini Coop )", 46.5749, 16.3708): (46.96311, 16.61322),
+    ("Nádasd – Vasúti út", 46.5757, 16.3637): (46.96391, 16.60612),
+    ("Ostffyasszonyfa – Hegyaljai utca", 47.96583, 16.61027): (47.32894, 17.04452),
+    ("Pinkamindszent – Fő utca", 47.0218, 16.2854): (47.03865, 16.4848),
+    ("Püspökmolnári – Béke utca 37", 47.0037, 16.4153): (47.06551, 16.76775),
+    ("Püspökmolnári – Petőfi Sándor utca", 47.0454, 16.4702): (47.10721, 16.82265),
+    ("Rábahídvég – Bertha György utca", 47.0422, 16.4429): (47.06833, 16.74389),
+    ("Rábapaty – Felsőpatyi út", 47.8404, 16.55588): (47.74647, 16.92647),
+    ("Rábapaty – Budai utca", 47.1755, 16.55386): (47.08157, 16.92445),
+    ("Rábapaty – Kossuth utca", 47.17195, 16.56114): (47.07802, 16.93173),
+    ("Rádóckölked – Fő utca ( Polg Hivatal )", 47.0437, 16.3516): (47.07639, 16.58806),
+    ("Rátót – Ady Endre utca", 46.5753, 16.2529): (46.96389, 16.42778),
+    ("Rönök – Gagarin tér", 46.5839, 16.2202): (46.97662, 16.37248),
+    ("Rönök – Táncsics Mihály út", 46.584, 16.2108): (46.97672, 16.36308),
+    ("Sorkifalud – Jókai Mór utca", 47.0919, 16.4438): (47.14182, 16.73514),
+    ("Sorkifalud – Kossuth Lajos utca 81", 47.0751, 16.4434): (47.12502, 16.73474),
+    ("Sorkikápolna – Alkotmány utca", 47.0824, 16.4207): (47.13972, 16.70444),
+    ("Sorokpolány – Fő utca", 47.0814, 16.4026): (47.13611, 16.67167),
+    ("Szarvaskend – Fő u (kocsma mellett)", 46.5923, 16.4039): (46.98938, 16.67555),
+    ("Szentpéterfa – Alkotmány utca", 47.0535, 16.2845): (47.09444, 16.47917),
+    ("Szőce – Kölcsey utca 88", 46.5309, 16.3406): (46.88697, 16.56876),
+    ("Tanakajd – Zrínyi I u ( Coop bolt )", 47.1135, 16.4354): (47.1869, 16.74224),
+    ("Vasalja – Ady Endre utca", 47.0053, 16.3131): (47.013, 16.52204),
+    ("Vasalja – Kossuth utca", 47.0043, 16.3043): (47.012, 16.51324),
+    ("Vasasszonyfa – Rákóczi utca", 47.300454, 16.75153): (47.31305, 16.67033),
+    ("Vasszentmihály – Fő utca ( Vegyes bolt )", 46.5811, 16.2433): (46.97017, 16.40669),
+    ("Vasszentmihály – Petőfi utca", 46.5803, 16.2423): (46.96937, 16.40569),
+    ("Viszák – Fő út", 46.5251, 16.2945): (46.88205, 16.49172),
+    ("Őrimagyarósd – Dózsa és Ady utca sarka", 46.5318, 16.3208): (46.88531, 16.53305),
 }
 for s in szigetek:
-    if s["name"] in KNOWN_COORD_FIXES:
-        s["lat"], s["lng"] = KNOWN_COORD_FIXES[s["name"]]
+    key = (s["name"], s["lat"], s["lng"])
+    if key in KNOWN_COORD_FIXES:
+        s["lat"], s["lng"] = KNOWN_COORD_FIXES[key]
+
+# Néhány naptárbeli település (jellemzően egy nagyobb község külterületi
+# része) nem szerepel önálló szigetként semmilyen formában, ezért a fenti
+# módszerrel nem kapna koordinátát — ezeknek kézzel, Wikipédia-adat alapján
+# adunk meg egy pozíciót.
+CALENDAR_COORD_OVERRIDES = {
+    "Fertőújlak": (47.6928, 16.845),
+    "Horvátzsidány": (47.41028, 16.62611),
+    "Kiszsidány": (47.41, 16.63944),
+    "Nyárliget": (47.6588, 16.8949),
+    "Sopron-Balf": (47.6333, 16.6),
+}
 
 print(f"szigetek: {len(szigetek)} (skipped {skipped_szigetek})")
 
@@ -290,6 +381,9 @@ if f_telepulesek and f_gyujtes:
         if coords:
             entry["lat"] = round(sum(c[0] for c in coords) / len(coords), 5)
             entry["lng"] = round(sum(c[1] for c in coords) / len(coords), 5)
+            matched_coords += 1
+        elif town in CALENDAR_COORD_OVERRIDES:
+            entry["lat"], entry["lng"] = CALENDAR_COORD_OVERRIDES[town]
             matched_coords += 1
         calendar_towns.append(entry)
 

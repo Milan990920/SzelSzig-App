@@ -91,12 +91,20 @@ STKH Kft./Sopron Holding Zrt. által biztosított munkafájljai). Frissítéshez
    előtagként szerepel) a teljes szigetnévben való kereséssel. Amelyik településhez így
    sem található koordináta, ott a felület a térkép megnyitásakor a meglévő
    címkereséshez hasonlóan, a háttérben lekérdezi a település koordinátáit (OpenStreetMap
-   Nominatim szolgáltatással). Ez kb. 213 településből kb. 176-nál talál rögtön
+   Nominatim szolgáltatással). Ez kb. 213 településből kb. 181-nél talál rögtön
    koordinátát, a többinél az élő oldalon futásidőben történik a keresés.
-4. Néhány település (eddig azonosítva: Csákánydoroszló, Csempeszkopács, Torony) forrás-
-   GPS-koordinátája tévesen messze esett a valós helytől — ezeket a `KNOWN_COORD_FIXES`
-   szótár javítja a szkriptben (ellenőrizve Wikipédia-adat alapján). Ha további ilyen
-   hibás pontot találsz, ide vegyél fel egy új bejegyzést.
+4. **Fontos adatminőségi hiba (2026.08, javítva):** kiderült, hogy a forrás Excel
+   "Szigetek GPS" munkalapján egy nagyobb, Vas megyei településcsoport (Szentgotthárd,
+   Körmend és Vasvár térsége — kb. 60 település) szigeteinek koordinátája egy közel
+   egységes, kb. 20-50 km-es eltolással volt rögzítve (a települések egymáshoz képest
+   nagyjából jó helyen voltak, csak az egész csoport rossz helyre került). Ezt a
+   `KNOWN_COORD_FIXES` szótár javítja a szkriptben, Wikipédia-adatok alapján
+   ellenőrizve — a kulcs a sziget neve ÉS az eredeti (hibás) koordinátája együtt, mert
+   néhány település több szigete azonos névvel, eltérő koordinátával szerepel a
+   forrásban. Az 5 olyan naptárbeli település (pl. Fertőújlak, Sopron-Balf), amelyiknek
+   egyáltalán nincs önálló szigetadata, a `CALENDAR_COORD_OVERRIDES` szótárban kap
+   kézzel megadott koordinátát. Ha további hibás pontot találsz, ide vegyél fel egy új
+   bejegyzést — érdemes a `js/data.js`-ben és a forrás Excelben egyaránt javítani.
 5. A tippek (`SZELSZIG_TIPS`) egyelőre kézzel szerkesztett tartalom a `js/data.js` alján.
 
 **Adatminőségi megjegyzés:** a forrás Excelekben 2 szigetsor és 2 másik sor koordinátája
