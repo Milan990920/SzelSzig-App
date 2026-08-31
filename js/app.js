@@ -500,15 +500,224 @@ function setupCampus() {
   setupSortingSearch();
 }
 
-function renderCalendar() {
-  const tbody = document.getElementById("calendar-body");
-  tbody.innerHTML = SZELSZIG_CALENDAR.map(
-    (row) => `
-    <tr>
-      <td><span class="frac-pill"><span class="dot" style="background:${row.color}"></span>${row.fraction}</span></td>
-      <td>${row.day}</td>
-    </tr>`
-  ).join("");
+// ---------------------------------------------------------------------------
+// Hulladéknaptár – település-kereső + térkép + havi naptár
+// ---------------------------------------------------------------------------
+
+const HU_WEEKDAYS = ["Vasárnap", "Hétfő", "Kedd", "Szerda", "Csütörtök", "Péntek", "Szombat"];
+const HU_WEEKDAYS_SHORT = ["Va", "Hé", "Ke", "Sze", "Csü", "Pé", "Szo"];
+const WEEKDAY_TO_JS = { Vasárnap: 0, Hétfő: 1, Kedd: 2, Szerda: 3, Csütörtök: 4, Péntek: 5, Szombat: 6 };
+const HU_MONTHS = ["január", "február", "március", "április", "május", "június", "július", "augusztus", "szeptember", "október", "november", "december"];
+
+let calMap;
+let calMapMarker;
+let calSelectedTown = null;
+let calViewYear, calViewMonth; // calViewMonth: 0-indexed
+let calListMode = "upcoming";
+const calGeocodeCache = new Map();
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function calTodayStr() {
+  const t = new Date();
+  return `${t.getFullYear()}-${pad2(t.getMonth() + 1)}-${pad2(t.getDate())}`;
+}
+
+function normalizeSearch(s) {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
+
+function renderTownList(filter = "") {
+  const wrap = document.getElementById("cal-town-list");
+  const norm = normalizeSearch(filter.trim());
+  const towns = WASTE_CALENDAR_TOWNS.filter((t) => !norm || normalizeSearch(t.name).includes(norm));
+
+  wrap.innerHTML =
+    towns
+      .map((t) => {
+        const jsDay = WEEKDAY_TO_JS[t.communalDay];
+        const short = jsDay !== undefined ? HU_WEEKDAYS_SHORT[jsDay] : "?";
+        const active = calSelectedTown && calSelectedTown.name === t.name ? " active" : "";
+        return `<div class="cal-town-row${active}" data-town="${t.name.replace(/"/g, "&quot;")}">
+          <span>${t.name}</span>
+          <span class="cal-row-right"><span class="dot dot-kommunalis"></span>${short}</span>
+        </div>`;
+      })
+      .join("") || `<p class="search-status">Nincs találat.</p>`;
+
+  wrap.querySelectorAll(".cal-town-row").forEach((row) => {
+    row.addEventListener("click", () => selectTown(row.dataset.town));
+  });
+}
+
+function selectTown(name) {
+  const town = WASTE_CALENDAR_TOWNS.find((t) => t.name === name);
+  if (!town) return;
+  calSelectedTown = town;
+
+  document.getElementById("cal-empty").hidden = true;
+  document.getElementById("cal-detail-card").hidden = false;
+  document.getElementById("cal-town-name").textContent = town.name;
+  document.getElementById("cal-weekday-pill").textContent = `Heti kommunális: ${town.communalDay}`;
+
+  const noteEl = document.getElementById("cal-town-note");
+  if (town.note) {
+    noteEl.hidden = false;
+    noteEl.textContent = town.note;
+  } else {
+    noteEl.hidden = true;
+  }
+
+  renderTownList(document.getElementById("cal-town-search").value);
+
+  const today = new Date();
+  calViewYear = today.getFullYear();
+  calViewMonth = today.getMonth();
+  renderCalMonth();
+  renderEventsList();
+  updateCalMap();
+}
+
+function placeCalMarker(lat, lng, name) {
+  if (calMapMarker) calMap.removeLayer(calMapMarker);
+  calMapMarker = L.marker([lat, lng]).addTo(calMap).bindPopup(name);
+  calMap.setView([lat, lng], 12);
+}
+
+function updateCalMap() {
+  if (!calMap) {
+    calMap = L.map("cal-map", { scrollWheelZoom: false }).setView(SOPRON_CENTER, 9);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap közreműködők",
+    }).addTo(calMap);
+  }
+  setTimeout(() => calMap.invalidateSize(), 50);
+
+  const town = calSelectedTown;
+  if (town.lat && town.lng) {
+    placeCalMarker(town.lat, town.lng, town.name);
+    return;
+  }
+
+  if (calGeocodeCache.has(town.name)) {
+    const cached = calGeocodeCache.get(town.name);
+    if (cached) placeCalMarker(cached.lat, cached.lng, town.name);
+    return;
+  }
+
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=hu&q=${encodeURIComponent(town.name + ", Magyarország")}`;
+  fetch(url, { headers: { Accept: "application/json" } })
+    .then((r) => r.json())
+    .then((data) => {
+      if (calSelectedTown !== town) return; // közben másik település lett kiválasztva
+      if (data.length) {
+        const lat = parseFloat(data[0].lat);
+        const lng = parseFloat(data[0].lon);
+        calGeocodeCache.set(town.name, { lat, lng });
+        placeCalMarker(lat, lng, town.name);
+      } else {
+        calGeocodeCache.set(town.name, null);
+      }
+    })
+    .catch(() => {});
+}
+
+function renderCalMonth() {
+  const town = calSelectedTown;
+  document.getElementById("cal-month-label").textContent = `${calViewYear}. ${HU_MONTHS[calViewMonth]}`;
+
+  const grid = document.getElementById("cal-grid");
+  const firstDay = new Date(calViewYear, calViewMonth, 1);
+  const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+  const startOffset = (firstDay.getDay() + 6) % 7; // hétfővel kezdve
+
+  const eventsByDate = {};
+  town.dates.forEach(([d, type]) => {
+    (eventsByDate[d] = eventsByDate[d] || []).push(type);
+  });
+
+  const todayStr = calTodayStr();
+  const communalJs = WEEKDAY_TO_JS[town.communalDay];
+
+  let html = ["Hé", "Ke", "Sze", "Csü", "Pé", "Szo", "Va"].map((d) => `<div class="cal-weekday-head">${d}</div>`).join("");
+  for (let i = 0; i < startOffset; i++) html += `<div class="cal-day empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calViewYear}-${pad2(calViewMonth + 1)}-${pad2(d)}`;
+    const jsWeekday = new Date(calViewYear, calViewMonth, d).getDay();
+    const dots = [];
+    if (communalJs === jsWeekday) dots.push('<span class="dot dot-kommunalis"></span>');
+    (eventsByDate[dateStr] || []).forEach((type) => {
+      dots.push(`<span class="dot dot-${type === "szelektiv" ? "szelektiv" : "zoldhulladek"}"></span>`);
+    });
+    html += `<div class="cal-day${dateStr === todayStr ? " today" : ""}"><span>${d}</span><span class="cal-day-dots">${dots.join("")}</span></div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function renderEventsList() {
+  const town = calSelectedTown;
+  const wrap = document.getElementById("cal-events-list");
+  const todayStr = calTodayStr();
+  let list = town.dates.slice();
+  if (calListMode === "upcoming") list = list.filter(([d]) => d >= todayStr);
+
+  if (!list.length) {
+    wrap.innerHTML = `<p class="search-status">${calListMode === "upcoming" ? "Nincs több hátralévő dátum 2026-ban." : "Nincs rögzített dátum."}</p>`;
+    return;
+  }
+
+  wrap.innerHTML = list
+    .map(([d, type]) => {
+      const isSzelektiv = type === "szelektiv";
+      const label = isSzelektiv ? "Szelektív hulladék" : "Zöldhulladék";
+      const [yy, mm, dd] = d.split("-").map(Number);
+      const weekday = HU_WEEKDAYS[new Date(yy, mm - 1, dd).getDay()];
+      const past = d < todayStr ? " past" : "";
+      return `<div class="cal-event-row${past}">
+        <span class="dot dot-${isSzelektiv ? "szelektiv" : "zoldhulladek"}"></span>
+        <span class="date">${d}</span>
+        <span>${label} (${weekday})</span>
+      </div>`;
+    })
+    .join("");
+}
+
+function setupWasteCalendar() {
+  renderTownList();
+
+  document.getElementById("cal-town-search").addEventListener("input", (e) => renderTownList(e.target.value));
+
+  document.getElementById("cal-prev-month").addEventListener("click", () => {
+    calViewMonth--;
+    if (calViewMonth < 0) {
+      calViewMonth = 11;
+      calViewYear--;
+    }
+    renderCalMonth();
+  });
+  document.getElementById("cal-next-month").addEventListener("click", () => {
+    calViewMonth++;
+    if (calViewMonth > 11) {
+      calViewMonth = 0;
+      calViewYear++;
+    }
+    renderCalMonth();
+  });
+
+  document.querySelectorAll("#cal-toggle button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#cal-toggle button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      calListMode = btn.dataset.mode;
+      renderEventsList();
+    });
+  });
 }
 
 function renderTips() {
@@ -533,6 +742,9 @@ function setupTabs() {
       if (btn.dataset.target === "view-map") {
         setTimeout(() => map && map.invalidateSize(), 50);
       }
+      if (btn.dataset.target === "view-calendar") {
+        setTimeout(() => calMap && calMap.invalidateSize(), 50);
+      }
     });
   });
 }
@@ -546,7 +758,7 @@ function setupFilters() {
 
 document.addEventListener("DOMContentLoaded", () => {
   initMap();
-  renderCalendar();
+  setupWasteCalendar();
   renderTips();
   setupTabs();
   setupFilters();

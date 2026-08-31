@@ -54,11 +54,51 @@
 
     <section id="view-calendar" class="view">
       <h1 class="page-title">Hulladéknaptár</h1>
-      <p class="lead">Példa a házhoz menő zsákos gyűjtés rendjére. A valós, utcára pontos naptár az STKH Kft. adatai alapján tölthető fel.</p>
-      <table class="calendar">
-        <thead><tr><th>Frakció</th><th>Gyűjtési rend</th></tr></thead>
-        <tbody id="calendar-body"></tbody>
-      </table>
+      <p class="lead">Keresd meg a településed, és nézd meg, mikor viszik el a szelektív hulladékot, a zöldhulladékot, és melyik napon van a heti kommunális gyűjtés.</p>
+
+      <div class="cal-layout">
+        <div class="cal-sidebar">
+          <div class="cal-search">
+            <input type="text" id="cal-town-search" placeholder="🔎 Település keresése (pl. Sopron, Sárvár)…" autocomplete="off" />
+          </div>
+          <div class="cal-town-list" id="cal-town-list"></div>
+        </div>
+
+        <div class="cal-main">
+          <div class="cal-detail-card" id="cal-detail-card" hidden>
+            <div class="cal-detail-head">
+              <h2 id="cal-town-name">—</h2>
+              <span class="cal-weekday-pill" id="cal-weekday-pill"></span>
+            </div>
+            <p class="cal-town-note" id="cal-town-note" hidden></p>
+            <div id="cal-map" class="cal-map"></div>
+
+            <div class="cal-month-nav">
+              <button type="button" id="cal-prev-month" aria-label="Előző hónap">‹</button>
+              <span id="cal-month-label">—</span>
+              <button type="button" id="cal-next-month" aria-label="Következő hónap">›</button>
+            </div>
+            <div class="cal-legend">
+              <span><span class="dot dot-szelektiv"></span>Szelektív</span>
+              <span><span class="dot dot-zoldhulladek"></span>Zöldhulladék</span>
+              <span><span class="dot dot-kommunalis"></span>Heti kommunális</span>
+            </div>
+            <div class="cal-grid" id="cal-grid"></div>
+
+            <div class="cal-list-toolbar">
+              <h3>Gyűjtési napok</h3>
+              <div class="cal-toggle" id="cal-toggle">
+                <button type="button" class="active" data-mode="upcoming">Csak közelgő</button>
+                <button type="button" data-mode="all">Összes nap</button>
+              </div>
+            </div>
+            <div class="cal-events-list" id="cal-events-list"></div>
+          </div>
+          <p class="cal-empty" id="cal-empty">👆 Válassz egy települést a listából a naptár megtekintéséhez.</p>
+        </div>
+      </div>
+
+      <p class="map-note">A szelektív és zöldhulladék-dátumok az STKH Kft. 2026-os gyűjtési naptára alapján, 213 településre. A heti kommunális gyűjtési nap minden e naptárban szereplő héten ismétlődik — néhány településnél (lásd a megjegyzést) körzetenként vagy utcánként eltérhet, ezt célszerű a stkh.hu oldalon ellenőrizni.</p>
     </section>
 
     <section id="view-tips" class="view">

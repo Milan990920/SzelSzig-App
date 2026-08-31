@@ -19,6 +19,11 @@ def find_one(keyword):
         raise FileNotFoundError(f"No source file matching '*{keyword}*.xlsx' in {SRC}")
     return matches[0]
 
+
+def find_one_csv(keyword):
+    matches = glob.glob(os.path.join(SRC, f"*{keyword}*.csv"))
+    return matches[0] if matches else None
+
 def _clean_token(token):
     """Strip whitespace and collapse a token with stray extra dots, e.g.
     '47.43.10' (meant '47.4310') or '46. 5202' (meant '46.5202')."""
@@ -218,6 +223,62 @@ for _, row in df5.iterrows():
 print(f"frakció-szabályok: {list(fraction_accepted.keys())}")
 
 # ---------------------------------------------------------------------------
+# 6) Hulladeknaptar -- heti kommunalis nap + konkret szelektiv/zoldhulladek
+# datumok, telepulesenkent (CSV forras, opcionalis). A terkephez a mar
+# beolvasott 'szigetek' lista telepulesenkenti atlagkoordinatajat hasznaljuk
+# -- ahol nincs egyezes sziget-adat, ott a felulet majd elo-geokodolja.
+# ---------------------------------------------------------------------------
+f_telepulesek = find_one_csv("telepulesek")
+f_gyujtes = find_one_csv("gyujtesi_napok")
+
+calendar_towns = []
+if f_telepulesek and f_gyujtes:
+    df_t = pd.read_csv(f_telepulesek, sep=";", encoding="utf-8-sig")
+    df_t.columns = ["telepules", "heti_nap", "megjegyzes"]
+    df_t = df_t.dropna(subset=["telepules"])
+    df_t = df_t[df_t["telepules"].astype(str).str.strip() != ""]
+
+    df_g = pd.read_csv(f_gyujtes, sep=";", encoding="utf-8-sig")
+    df_g.columns = ["telepules", "datum", "tipus"]
+    df_g = df_g.dropna(subset=["telepules"])
+
+    town_coords = {}
+    for s in szigetek:
+        town = s["name"].split(" – ")[0].strip()
+        town_coords.setdefault(town, []).append((s["lat"], s["lng"]))
+
+    TYPE_MAP = {"Szelektiv": "szelektiv", "Zoldhulladek": "zoldhulladek"}
+    dates_by_town = {}
+    for _, row in df_g.iterrows():
+        town = str(row["telepules"]).strip()
+        tipus = TYPE_MAP.get(str(row["tipus"]).strip())
+        datum = str(row["datum"]).strip()
+        if tipus and datum:
+            dates_by_town.setdefault(town, []).append([datum, tipus])
+
+    matched_coords = 0
+    for _, row in df_t.iterrows():
+        town = str(row["telepules"]).strip()
+        coords = town_coords.get(town)
+        megjegyzes = row["megjegyzes"]
+        entry = {
+            "name": town,
+            "communalDay": str(row["heti_nap"]).strip(),
+            "note": str(megjegyzes).strip() if pd.notna(megjegyzes) and str(megjegyzes).strip() else None,
+            "dates": sorted(dates_by_town.get(town, [])),
+        }
+        if coords:
+            entry["lat"] = round(sum(c[0] for c in coords) / len(coords), 5)
+            entry["lng"] = round(sum(c[1] for c in coords) / len(coords), 5)
+            matched_coords += 1
+        calendar_towns.append(entry)
+
+    total_dates = sum(len(t["dates"]) for t in calendar_towns)
+    print(f"hulladéknaptár: {len(calendar_towns)} település ({matched_coords} koordinátával), {total_dates} dátum")
+else:
+    print("hulladéknaptár CSV-k nem találhatók, kihagyva (opcionális)")
+
+# ---------------------------------------------------------------------------
 # Write data.js
 # ---------------------------------------------------------------------------
 out = []
@@ -242,6 +303,10 @@ out.append("")
 out.append("// Mit lehet az egyes frakciókba dobni (STKH Kft. szelektív szigetek szabályzata)")
 out.append(f"const FRACTION_ACCEPTED = {json.dumps(fraction_accepted, ensure_ascii=False)};")
 out.append("")
+out.append("// Hulladéknaptár településenként: heti kommunális gyűjtési nap +")
+out.append("// konkrét szelektív/zöldhulladék dátumok 2026-ra (STKH Kft. adatai alapján).")
+out.append(f"const WASTE_CALENDAR_TOWNS = {json.dumps(calendar_towns, ensure_ascii=False)};")
+out.append("")
 
 # Keep the demo calendar & tips content (not covered by the Excel files)
 extra = '''
@@ -253,15 +318,6 @@ const HULLADEKUDVAR_INFO = {
   accepted: "Lakossági eredetű, előre szelektált hulladék adható le: pl. szétszerelt bútor, zöldhulladék, kisebb építési törmelék, valamint veszélyes hulladékok (fáradt motor-/kenőolaj, elemek, akkumulátorok, elektronikai hulladék, festékmaradék).",
   condition: "Csak az STKH Kft. szolgáltatási területén bejelentett lakcímmel rendelkező, hulladékszállítási díjhátralék nélküli lakosok vehetik igénybe.",
 };
-
-// Demó hulladéknaptár – házhoz menő zsákos gyűjtés (STKH Kft. rendszere alapján, példa)
-const SZELSZIG_CALENDAR = [
-  { fraction: "Papír", day: "Minden hónap 1. és 3. hétfője", color: "#2f6fed" },
-  { fraction: "Műanyag", day: "Minden páros hét szerdája", color: "#f5a623" },
-  { fraction: "Üveg", day: "Minden hónap 2. péntekje", color: "#2e8b57" },
-  { fraction: "Zöldhulladék", day: "Április–november, havonta 1 alkalom", color: "#6aa84f" },
-  { fraction: "Lomtalanítás", day: "Évente 1 alkalom, előzetes hirdetés szerint", color: "#8e44ad" },
-];
 
 // Szelektálási tippek a diplomamunka szakirodalmi része alapján
 const SZELSZIG_TIPS = [

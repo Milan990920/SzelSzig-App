@@ -69,16 +69,29 @@ A `js/data.js` a `scripts/build_data.py` szkripttel készül, az alábbi Excel f
   hanem nyilvános közlemények/honlapok alapján összeállított kutatás (2026.07.27-i állapot) —
   néhány telephelynél maga a forrás is jelzi, hogy a pontos nyitvatartást a linken érdemes
   ellenőrizni, ezt a figyelmeztetést a felület is megjeleníti.
+- `telepulesek.csv` *(opcionális, `;` elválasztóval)* – oszlopok: `telepules`, `heti_nap`
+  (a heti kommunális gyűjtés napja), `megjegyzes` (pl. ha egy településen körzetenként/
+  utcánként eltér a rend). Ez adja a Hulladéknaptár település-listáját.
+- `gyujtesi_napok.csv` *(opcionális, `;` elválasztóval)* – oszlopok: `telepules`, `datum`
+  (ÉÉÉÉ-HH-NN), `tipus` (`Szelektiv` vagy `Zoldhulladek`). Ez az STKH Kft. 2026-os
+  gyűjtési naptárának soronkénti bontása, ebből épül fel az egyes települések
+  szelektív/zöldhulladék dátumlistája.
 
-A szkript a forrás Excel fájlokat nem tartalmazza a repóban (ezek a felhasználó saját,
+A szkript a forrás Excel/CSV fájlokat nem tartalmazza a repóban (ezek a felhasználó saját,
 STKH Kft./Sopron Holding Zrt. által biztosított munkafájljai). Frissítéshez:
 
-1. Tedd a friss Excel fájlokat egy mappába, és állítsd be az `SRC` elérési utat a
+1. Tedd a friss Excel és CSV fájlokat egy mappába, és állítsd be az `SRC` elérési utat a
    `scripts/build_data.py` tetején.
 2. Futtasd: `python3 scripts/build_data.py` — ez felülírja a `js/data.js` fájlt.
-3. A hulladéknaptár (`SZELSZIG_CALENDAR`) és a tippek (`SZELSZIG_TIPS`) egyelőre kézzel
-   szerkesztett tartalom a `js/data.js` alján — a valós, utcára pontos naptárhoz még
-   szükséges egy külön STKH Kft. adatforrás bekötése.
+3. A `telepulesek.csv` + `gyujtesi_napok.csv` alapján épül fel a `WASTE_CALENDAR_TOWNS`
+   tömb (Hulladéknaptár funkció). A térképi koordinátákat a szkript a már meglévő
+   szelektívsziget-adatokból próbálja kitalálni (azonos településnevű szigetek GPS-
+   pozícióinak átlagolásával) — amelyik településhez nincs saját szelektív sziget, ott
+   a felület a térkép megnyitásakor a meglévő címkereséshez hasonlóan, a háttérben
+   lekérdezi a település koordinátáit (OpenStreetMap Nominatim szolgáltatással). Ez kb.
+   213 településből kb. 175-nél talál rögtön koordinátát, a többinél az élő oldalon
+   futásidőben történik a keresés.
+4. A tippek (`SZELSZIG_TIPS`) egyelőre kézzel szerkesztett tartalom a `js/data.js` alján.
 
 **Adatminőségi megjegyzés:** a forrás Excelekben 2 szigetsor és 2 másik sor koordinátája
 értelmezhetetlen/hibás volt (pl. szélesség=hosszúság, vagy hiányzó számjegy) — ezeket a
