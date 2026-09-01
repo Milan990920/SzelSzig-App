@@ -609,12 +609,16 @@ table.calendar tr:last-child td { border-bottom: none; }
 }
 
 /* ---------- Report form ---------- */
+.report-wrap {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
 .report-type-toggle {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 16px;
-  max-width: 520px;
 }
 
 .report-type-btn {
@@ -654,7 +658,6 @@ table.calendar tr:last-child td { border-bottom: none; }
   display: flex;
   flex-direction: column;
   gap: 14px;
-  max-width: 520px;
 }
 
 #report-waste-fields,
