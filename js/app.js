@@ -616,6 +616,10 @@ const HU_WEEKDAYS_SHORT = ["Va", "Hé", "Ke", "Sze", "Csü", "Pé", "Szo"];
 const WEEKDAY_TO_JS = { Vasárnap: 0, Hétfő: 1, Kedd: 2, Szerda: 3, Csütörtök: 4, Péntek: 5, Szombat: 6 };
 const HU_MONTHS = ["január", "február", "március", "április", "május", "június", "július", "augusztus", "szeptember", "október", "november", "december"];
 
+// Magyar ábécé szerinti rendezés (az egyszerű string-összehasonlítás az
+// ékezetes kezdőbetűs településeket — Á, Ó, Ö, Ő, Ú… — a lista végére dobná).
+const HU_COLLATOR = new Intl.Collator("hu", { sensitivity: "base" });
+
 let calMap;
 let calMapMarker;
 let calSelectedTown = null;
@@ -642,7 +646,9 @@ function normalizeSearch(s) {
 function renderTownList(filter = "") {
   const wrap = document.getElementById("cal-town-list");
   const norm = normalizeSearch(filter.trim());
-  const towns = WASTE_CALENDAR_TOWNS.filter((t) => !norm || normalizeSearch(t.name).includes(norm));
+  const towns = WASTE_CALENDAR_TOWNS.filter((t) => !norm || normalizeSearch(t.name).includes(norm)).sort((a, b) =>
+    HU_COLLATOR.compare(a.name, b.name)
+  );
 
   wrap.innerHTML =
     towns
