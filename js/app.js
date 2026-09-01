@@ -441,18 +441,34 @@ function renderCampusSorting() {
   const wrap = document.getElementById("campus-sorting");
   wrap.innerHTML = CAMPUS_SORTING.map(
     (s) => `
-    <div class="sorting-card" data-category="${s.category}" style="border-top-color:${s.color}">
-      <h3>${s.category}${s.tagline ? ` <span class="sorting-tagline">${s.tagline}</span>` : ""}</h3>
-      <div class="sorting-col">
-        <p class="sorting-heading sorting-yes">✔ Tedd bele!</p>
-        <ul>${s.accept.map((i) => `<li>${i.icon} ${i.text}</li>`).join("")}</ul>
+    <div class="sorting-card" data-category="${s.category}">
+      <div class="sorting-card-head" style="background:${s.color}; color:${readableTextOn(s.color)}">
+        <h3>${s.category}</h3>
+        ${s.tagline ? `<span class="sorting-tagline">${s.tagline}</span>` : ""}
       </div>
-      <div class="sorting-col">
-        <p class="sorting-heading sorting-no">✘ Ne tedd bele!</p>
-        <ul>${s.reject.map((i) => `<li>${i.icon} ${i.text}</li>`).join("")}</ul>
+      <div class="sorting-card-body">
+        <div class="sorting-col">
+          <p class="sorting-heading sorting-yes"><span class="sorting-badge sorting-badge-yes">✓</span>Tedd bele!</p>
+          <ul>${s.accept.map((i) => `<li>${i.icon} ${i.text}</li>`).join("")}</ul>
+        </div>
+        <div class="sorting-col">
+          <p class="sorting-heading sorting-no"><span class="sorting-badge sorting-badge-no">✕</span>Ne tedd bele!</p>
+          <ul>${s.reject.map((i) => `<li>${i.icon} ${i.text}</li>`).join("")}</ul>
+        </div>
       </div>
     </div>`
   ).join("");
+}
+
+function setupSortingToggle() {
+  const btn = document.getElementById("sorting-toggle-all");
+  const grid = document.getElementById("campus-sorting");
+  btn.addEventListener("click", () => {
+    const open = grid.hidden;
+    grid.hidden = !open;
+    btn.textContent = open ? "📋 Szabálylisták elrejtése" : "📋 Mutasd mind a három szabálylistát";
+    btn.classList.toggle("open", open);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -588,6 +604,7 @@ function setupCampus() {
   renderCampusSorting();
   setupCampusLightbox();
   setupSortingSearch();
+  setupSortingToggle();
 }
 
 // ---------------------------------------------------------------------------
