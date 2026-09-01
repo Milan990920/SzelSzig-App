@@ -211,7 +211,14 @@ async function searchAddress(query) {
   const container = document.getElementById("address-results");
   container.innerHTML = `<p class="search-status">Keresés…</p>`;
   try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=hu&q=${encodeURIComponent(query)}`;
+    // Nem szűkítjük le a keresést Sopronra — a szolgáltatási terület 213
+    // települést fed le, ezért csak enyhén (nem kizáróan) preferáljuk ezt a
+    // térséget a viewbox paraméterrel, hogy egyértelmű esetben a régióbeli
+    // találat nyerjen, de máshonnan is lehessen általánosan keresni.
+    const REGION_VIEWBOX = "15.9,48.0,17.7,46.4"; // left,top,right,bottom
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=hu&viewbox=${REGION_VIEWBOX}&bounded=0&q=${encodeURIComponent(
+      query
+    )}`;
     const res = await fetch(url, { headers: { Accept: "application/json" } });
     const data = await res.json();
     if (!data.length) {
@@ -247,7 +254,7 @@ function setupAddressSearch() {
     e.preventDefault();
     const query = document.getElementById("address-input").value.trim();
     if (!query) return;
-    searchAddress(query.toLowerCase().includes("sopron") ? query : `${query}, Sopron`);
+    searchAddress(query);
   });
 }
 
