@@ -23,6 +23,7 @@
   --tint-yellow-border: #f0d989;
   --tint-red: #ffeeec;
   --tint-grey: #f3fafa;
+  --watermark-opacity: 0.05;
   --font-heading: "Plus Jakarta Sans", "Segoe UI", sans-serif;
   --font-body: "Plus Jakarta Sans", "Segoe UI", sans-serif;
 }
@@ -53,6 +54,7 @@
     --tint-yellow-border: #5c4c1e;
     --tint-red: #38201e;
     --tint-grey: #1f2b2d;
+    --watermark-opacity: 0.09;
   }
 }
 
@@ -79,6 +81,7 @@
   --tint-yellow-border: #5c4c1e;
   --tint-red: #38201e;
   --tint-grey: #1f2b2d;
+  --watermark-opacity: 0.09;
 }
 
 * { box-sizing: border-box; }
@@ -102,6 +105,26 @@ html, body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
+}
+
+body {
+  position: relative;
+  z-index: 0;
+}
+
+/* Halvány SzelSzig kabala vízjel az egész felület mögött, rögzítve
+   (görgetéskor is a helyén marad), a tartalom fölé sosem kerülhet. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url("../assets/mascot-watermark.png");
+  background-repeat: repeat;
+  background-size: 260px auto;
+  background-position: center top;
+  opacity: var(--watermark-opacity, 0.05);
+  pointer-events: none;
 }
 
 * { font-family: inherit; }
