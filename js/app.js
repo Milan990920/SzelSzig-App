@@ -615,6 +615,8 @@ const HU_WEEKDAYS = ["Vasárnap", "Hétfő", "Kedd", "Szerda", "Csütörtök", "
 const HU_WEEKDAYS_SHORT = ["Va", "Hé", "Ke", "Sze", "Csü", "Pé", "Szo"];
 const WEEKDAY_TO_JS = { Vasárnap: 0, Hétfő: 1, Kedd: 2, Szerda: 3, Csütörtök: 4, Péntek: 5, Szombat: 6 };
 const HU_MONTHS = ["január", "február", "március", "április", "május", "június", "július", "augusztus", "szeptember", "október", "november", "december"];
+const CAL_TYPE_ICON = { szelektiv: "♻️", zoldhulladek: "🍂", kommunalis: "🗑️" };
+const CAL_TYPE_LABEL = { szelektiv: "Szelektív hulladék", zoldhulladek: "Zöldhulladék" };
 
 // Magyar ábécé szerinti rendezés (az egyszerű string-összehasonlítás az
 // ékezetes kezdőbetűs településeket — Á, Ó, Ö, Ő, Ú… — a lista végére dobná).
@@ -658,7 +660,7 @@ function renderTownList(filter = "") {
         const active = calSelectedTown && calSelectedTown.name === t.name ? " active" : "";
         return `<div class="cal-town-row${active}" data-town="${t.name.replace(/"/g, "&quot;")}">
           <span>${t.name}</span>
-          <span class="cal-row-right"><span class="dot dot-kommunalis"></span>${short}</span>
+          <span class="cal-row-right"><span class="cal-icon">${CAL_TYPE_ICON.kommunalis}</span>${short}</span>
         </div>`;
       })
       .join("") || `<p class="search-status">Nincs találat.</p>`;
@@ -773,9 +775,9 @@ function renderCalMonth() {
     const dateStr = `${calViewYear}-${pad2(calViewMonth + 1)}-${pad2(d)}`;
     const jsWeekday = new Date(calViewYear, calViewMonth, d).getDay();
     const dots = [];
-    if (communalJs === jsWeekday) dots.push('<span class="dot dot-kommunalis"></span>');
+    if (communalJs === jsWeekday) dots.push(`<span class="cal-icon">${CAL_TYPE_ICON.kommunalis}</span>`);
     (eventsByDate[dateStr] || []).forEach((type) => {
-      dots.push(`<span class="dot dot-${type === "szelektiv" ? "szelektiv" : "zoldhulladek"}"></span>`);
+      dots.push(`<span class="cal-icon">${CAL_TYPE_ICON[type === "szelektiv" ? "szelektiv" : "zoldhulladek"]}</span>`);
     });
     html += `<div class="cal-day${dateStr === todayStr ? " today" : ""}"><span>${d}</span><span class="cal-day-dots">${dots.join("")}</span></div>`;
   }
@@ -796,18 +798,110 @@ function renderEventsList() {
 
   wrap.innerHTML = list
     .map(([d, type]) => {
-      const isSzelektiv = type === "szelektiv";
-      const label = isSzelektiv ? "Szelektív hulladék" : "Zöldhulladék";
+      const label = CAL_TYPE_LABEL[type] || CAL_TYPE_LABEL.zoldhulladek;
       const [yy, mm, dd] = d.split("-").map(Number);
       const weekday = HU_WEEKDAYS[new Date(yy, mm - 1, dd).getDay()];
       const past = d < todayStr ? " past" : "";
       return `<div class="cal-event-row${past}">
-        <span class="dot dot-${isSzelektiv ? "szelektiv" : "zoldhulladek"}"></span>
+        <span class="cal-icon">${CAL_TYPE_ICON[type] || CAL_TYPE_ICON.zoldhulladek}</span>
         <span class="date">${d}</span>
         <span>${label} (${weekday})</span>
       </div>`;
     })
     .join("");
+}
+
+// ---------------------------------------------------------------------------
+// Naptár exportálása .ics fájlba (Google/Apple/Outlook naptárba illeszthető)
+// ---------------------------------------------------------------------------
+
+function icsEscape(str) {
+  return String(str)
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n");
+}
+
+function slugify(str) {
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function icsDateStamp() {
+  const t = new Date();
+  return `${t.getUTCFullYear()}${pad2(t.getUTCMonth() + 1)}${pad2(t.getUTCDate())}T${pad2(t.getUTCHours())}${pad2(
+    t.getUTCMinutes()
+  )}${pad2(t.getUTCSeconds())}Z`;
+}
+
+function nextWeekdayDateStr(jsWeekday) {
+  const t = new Date();
+  const diff = (jsWeekday - t.getDay() + 7) % 7;
+  t.setDate(t.getDate() + diff);
+  return `${t.getFullYear()}${pad2(t.getMonth() + 1)}${pad2(t.getDate())}`;
+}
+
+function buildTownICS(town) {
+  const dtstamp = icsDateStamp();
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//SzelSzig App//Hulladeknaptar//HU",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+  ];
+
+  town.dates.forEach(([d, type], i) => {
+    const icon = CAL_TYPE_ICON[type] || "";
+    const label = CAL_TYPE_LABEL[type] || type;
+    const dateCompact = d.replace(/-/g, "");
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:${slugify(type)}-${dateCompact}-${i}@szelszigapp.local`,
+      `DTSTAMP:${dtstamp}`,
+      `DTSTART;VALUE=DATE:${dateCompact}`,
+      `SUMMARY:${icsEscape(`${icon} ${label} – ${town.name}`)}`,
+      `DESCRIPTION:${icsEscape("SzelSzig App hulladéknaptár — STKH Kft. 2026-os gyűjtési naptára alapján.")}`,
+      "END:VEVENT"
+    );
+  });
+
+  const communalJs = WEEKDAY_TO_JS[town.communalDay];
+  if (communalJs !== undefined) {
+    const desc =
+      (town.note ? town.note + " " : "") +
+      "A heti kommunális gyűjtési nap körzetenként/utcánként eltérhet — érdemes a stkh.hu oldalon is ellenőrizni.";
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:kommunalis-heti-${slugify(town.name)}@szelszigapp.local`,
+      `DTSTAMP:${dtstamp}`,
+      `DTSTART;VALUE=DATE:${nextWeekdayDateStr(communalJs)}`,
+      "RRULE:FREQ=WEEKLY;INTERVAL=1",
+      `SUMMARY:${icsEscape(`${CAL_TYPE_ICON.kommunalis} Heti kommunális gyűjtés – ${town.name}`)}`,
+      `DESCRIPTION:${icsEscape(desc)}`,
+      "END:VEVENT"
+    );
+  }
+
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+
+function downloadICS(filename, content) {
+  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function setupWasteCalendar() {
@@ -839,6 +933,12 @@ function setupWasteCalendar() {
       calListMode = btn.dataset.mode;
       renderEventsList();
     });
+  });
+
+  document.getElementById("cal-ics-btn").addEventListener("click", () => {
+    if (!calSelectedTown) return;
+    const content = buildTownICS(calSelectedTown);
+    downloadICS(`${slugify(calSelectedTown.name)}-hulladeknaptar.ics`, content);
   });
 }
 

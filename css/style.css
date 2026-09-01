@@ -1254,16 +1254,11 @@ h2.campus-subtitle {
 
 .cal-town-row.active .cal-row-right { color: #eafeff; }
 
-.cal-town-row .dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
+.cal-icon {
   display: inline-block;
+  font-size: 0.8rem;
+  line-height: 1;
 }
-
-.dot-szelektiv { background: var(--cal-szelektiv); }
-.dot-zoldhulladek { background: var(--cal-zold); }
-.dot-kommunalis { background: var(--cal-kommunalis); }
 
 .cal-empty {
   color: var(--muted);
@@ -1303,6 +1298,20 @@ h2.campus-subtitle {
   font-weight: 700;
   padding: 4px 11px;
   border-radius: 999px;
+}
+
+.cal-ics-btn {
+  margin-left: auto;
+  border: none;
+  background: var(--accent-grad);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 7px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: var(--shadow-pop);
+  white-space: nowrap;
 }
 
 .cal-town-note {
@@ -1356,6 +1365,7 @@ h2.campus-subtitle {
 }
 
 .cal-legend span { display: flex; align-items: center; gap: 5px; }
+.cal-legend .cal-icon { font-size: 0.95rem; }
 
 .cal-grid {
   display: grid;
@@ -1386,8 +1396,8 @@ h2.campus-subtitle {
 
 .cal-day.empty { background: transparent; }
 .cal-day.today { outline: 2px solid var(--red); }
-.cal-day .cal-day-dots { display: flex; gap: 2px; }
-.cal-day .dot { width: 6px; height: 6px; }
+.cal-day .cal-day-dots { display: flex; gap: 1px; }
+.cal-day .cal-icon { font-size: 0.58rem; }
 
 .cal-list-toolbar {
   display: flex;
@@ -1444,6 +1454,8 @@ h2.campus-subtitle {
   background: var(--tint-grey);
   font-size: 0.85rem;
 }
+
+.cal-event-row .cal-icon { font-size: 1rem; }
 
 .cal-event-row .date { font-weight: 700; min-width: 88px; }
 .cal-event-row.past { opacity: 0.5; }
